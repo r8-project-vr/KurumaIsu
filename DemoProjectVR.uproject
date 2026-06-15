@@ -7,7 +7,10 @@
 		{
 			"Name": "DemoProjectVR",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
 		}
 	],
 	"Plugins": [
@@ -17,8 +20,8 @@
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Linux",
-				"Android",
-				"VisionOS"
+				"LinuxArm64",
+				"Android"
 			]
 		},
 		{
@@ -27,6 +30,7 @@
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Linux",
+				"LinuxArm64",
 				"Android"
 			]
 		},
@@ -36,8 +40,8 @@
 			"SupportedTargetPlatforms": [
 				"Win64",
 				"Linux",
-				"Android",
-				"VisionOS"
+				"LinuxArm64",
+				"Android"
 			]
 		},
 		{
@@ -46,14 +50,16 @@
 		},
 		{
 			"Name": "BleGoodies",
-			"Enabled": true
+			"Enabled": true,
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/content/9ad1594e91da4da1aa72fb617697c9f7"
 		},
 		{
 			"Name": "VisualStudioTools",
 			"Enabled": true,
 			"SupportedTargetPlatforms": [
 				"Win64"
-			]
+			],
+			"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/362651520df94e4fa65492dbcba44ae2"
 		}
 	],
 	"TargetPlatforms": [
