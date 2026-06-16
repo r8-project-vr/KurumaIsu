@@ -31,7 +31,7 @@ void AISlideDoor::Tick(float DeltaTime)
 
 	if (isAction) 
 	{
-		FVector targetLocation = GetActorLocation();
+		FVector targetLocation = beforeLocation;
 
 		if (isOpen)
 		{
