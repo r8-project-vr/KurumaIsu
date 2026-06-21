@@ -2,9 +2,14 @@
 
 
 #include "Actor/Nuigurumi/NuiEyeSightComponent.h"
-#include "Engine/EngineTypes.h"
-#include "Kismet/KismetSystemLibrary.h"
+
 #include "DrawDebugHelpers.h"
+#include "Engine/EngineTypes.h"
+#include "GimmickInterface.h"
+#include "InputCoreTypes.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "UObject/UnrealType.h"
 
 // Sets default values for this component's properties
 UNuiEyeSightComponent::UNuiEyeSightComponent()
@@ -32,6 +37,7 @@ void UNuiEyeSightComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	DetectObject();
+	HandleDebugActionInput();
 	// ...
 }
 
@@ -84,12 +90,7 @@ void UNuiEyeSightComponent::DetectObject()
 
 	for (AActor* TargetActor : OutActors)
 	{
-		if (TargetActor == nullptr)
-		{
-			continue;
-		}
-
-		if (TargetActor->ActorHasTag(TargetTag) == false)
+		if (IsDetectionTarget(TargetActor) == false)
 		{
 			continue;
 		}
@@ -138,15 +139,28 @@ void UNuiEyeSightComponent::DetectObject()
 
 void UNuiEyeSightComponent::SetDetectedActor(AActor* NewActor)
 {
+	AActor* OldActor = DetectedActor;
 	bool bOldHasDetectedActor = HasDetectedActor();
+	bool bOldHasDetectedGimmick = HasDetectedGimmick();
 
 	DetectedActor = NewActor;
 
 	bool bNewHasDetectedActor = HasDetectedActor();
+	bool bNewHasDetectedGimmick = HasDetectedGimmick();
 
 	if (bOldHasDetectedActor != bNewHasDetectedActor)
 	{
 		OnDetectionChanged.Broadcast(bNewHasDetectedActor);
+	}
+
+	if (OldActor != DetectedActor)
+	{
+		OnDetectedActorChanged.Broadcast(DetectedActor);
+	}
+
+	if (bOldHasDetectedGimmick != bNewHasDetectedGimmick)
+	{
+		OnGimmickFocusChanged.Broadcast(bNewHasDetectedGimmick);
 	}
 }
 
@@ -154,4 +168,133 @@ bool UNuiEyeSightComponent::HasDetectedActor() const
 {
 	return IsValid(DetectedActor);
 }
+
+AActor* UNuiEyeSightComponent::GetDetectedActor() const
+{
+	return DetectedActor;
+}
+
+bool UNuiEyeSightComponent::HasDetectedGimmick() const
+{
+	return IsGimmickActor(DetectedActor);
+}
+
+bool UNuiEyeSightComponent::TryActionDetectedGimmick(AActor* InstigatorActor)
+{
+	if (HasDetectedGimmick() == false)
+	{
+		return false;
+	}
+
+	IGimmickInterface* Gimmick = Cast<IGimmickInterface>(DetectedActor);
+	if (Gimmick == nullptr)
+	{
+		return false;
+	}
+
+	Gimmick->Action();
+	return true;
+}
+
+void UNuiEyeSightComponent::HandleDebugActionInput()
+{
+	if (bEnableKeyboardDebugAction == false)
+	{
+		return;
+	}
+
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+	if (PlayerController == nullptr || PlayerController->WasInputKeyJustPressed(EKeys::E) == false)
+	{
+		return;
+	}
+
+	bool bDidAction = TryActionElevatorDebug(DetectedActor);
+	if (bDidAction == false)
+	{
+		bDidAction = TryActionDetectedGimmick(GetOwner());
+	}
+	if (GEngine != nullptr)
+	{
+		const FString Message = bDidAction
+			? TEXT("Debug Action: E pressed")
+			: TEXT("Debug Action: No detected gimmick");
+		GEngine->AddOnScreenDebugMessage(-1, 1.5f, bDidAction ? FColor::Cyan : FColor::Yellow, Message);
+	}
+}
+
+bool UNuiEyeSightComponent::TryActionElevatorDebug(AActor* GimmickActor) const
+{
+	if (IsValid(GimmickActor) == false)
+	{
+		return false;
+	}
+
+	AActor* ElevatorActor = nullptr;
+	FObjectProperty* ElevatorProperty = FindFProperty<FObjectProperty>(GimmickActor->GetClass(), TEXT("elevatorActor"));
+	if (ElevatorProperty != nullptr)
+	{
+		ElevatorActor = Cast<AActor>(ElevatorProperty->GetObjectPropertyValue_InContainer(GimmickActor));
+	}
+
+	if (ElevatorActor == nullptr)
+	{
+		ElevatorActor = GimmickActor;
+	}
+
+	const bool bMovedFloor = TryCallFunctionByName(ElevatorActor, TEXT("MoveElevator"))
+		|| TryCallFunctionByName(ElevatorActor, TEXT("MoveUp"));
+	const bool bStartedAction = TryCallFunctionByName(ElevatorActor, TEXT("Action"));
+
+	return bMovedFloor || bStartedAction;
+}
+
+bool UNuiEyeSightComponent::TryCallFunctionByName(AActor* TargetActor, const FName FunctionName) const
+{
+	if (IsValid(TargetActor) == false)
+	{
+		return false;
+	}
+
+	UFunction* Function = TargetActor->FindFunction(FunctionName);
+	if (Function == nullptr)
+	{
+		return false;
+	}
+
+	uint8* Params = nullptr;
+	TArray<uint8> ParamBuffer;
+	if (Function->ParmsSize > 0)
+	{
+		ParamBuffer.SetNumZeroed(Function->ParmsSize);
+		Params = ParamBuffer.GetData();
+
+		if (FBoolProperty* BoolParam = CastField<FBoolProperty>(Function->ChildProperties))
+		{
+			BoolParam->SetPropertyValue_InContainer(Params, true);
+		}
+	}
+
+	TargetActor->ProcessEvent(Function, Params);
+	return true;
+}
+
+bool UNuiEyeSightComponent::IsDetectionTarget(AActor* TargetActor) const
+{
+	if (TargetActor == nullptr)
+	{
+		return false;
+	}
+
+	const bool bMatchesTag = bDetectTargetTag && TargetTag != NAME_None && TargetActor->ActorHasTag(TargetTag);
+	const bool bMatchesGimmick = bDetectGimmickInterface && IsGimmickActor(TargetActor);
+
+	return bMatchesTag || bMatchesGimmick;
+}
+
+bool UNuiEyeSightComponent::IsGimmickActor(AActor* TargetActor) const
+{
+	return IsValid(TargetActor) && TargetActor->GetClass()->ImplementsInterface(UGimmickInterface::StaticClass());
+}
+
 
