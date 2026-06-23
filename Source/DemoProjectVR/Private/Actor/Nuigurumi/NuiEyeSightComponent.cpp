@@ -204,7 +204,7 @@ void UNuiEyeSightComponent::HandleDebugActionInput()
 	}
 
 	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
-	if (PlayerController == nullptr || PlayerController->WasInputKeyJustPressed(EKeys::E) == false)
+	if (PlayerController == nullptr || PlayerController->WasInputKeyJustPressed(EKeys::F) == false)
 	{
 		return;
 	}
