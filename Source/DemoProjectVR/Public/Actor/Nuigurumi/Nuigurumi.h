@@ -3,8 +3,22 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Blueprint/UserWidget.h"
 #include "GameFramework/Actor.h"
 #include "Nuigurumi.generated.h"
+
+UCLASS()
+class DEMOPROJECTVR_API UNuiInteractionPromptWidget : public UUserWidget
+{
+	GENERATED_BODY()
+
+public:
+	void BuildPrompt(
+		const FText& Text,
+		const FSlateFontInfo& Font,
+		const FLinearColor& TextColor,
+		const FLinearColor& BackgroundColor);
+};
 
 UCLASS()
 class DEMOPROJECTVR_API ANuigurumi : public AActor
@@ -18,6 +32,12 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION()
+	void HandleDetectedActorChanged(AActor* NewActor);
+
+	UFUNCTION()
+	void HandleGimmickFocusChanged(bool bCanAction);
 
 public:
 	// Called every frame
@@ -38,8 +58,29 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Follow")
 	bool bMatchPlayerViewRotation = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
+	FText InteractionPromptText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
+	FVector InteractionPromptOffset = FVector(0.0f, 0.0f, 30.0f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
+	FSlateFontInfo InteractionPromptFont;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
+	FLinearColor InteractionPromptTextColor = FLinearColor::White;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
+	FLinearColor InteractionPromptBackgroundColor = FLinearColor(0.02f, 0.02f, 0.02f, 0.75f);
+
 private:
 	// 基本Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class USphereComponent* Collider;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UWidgetComponent* InteractionPromptWidget;
+
+	UPROPERTY()
+	AActor* InteractionPromptTarget = nullptr;
 };
