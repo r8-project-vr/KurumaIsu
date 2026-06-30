@@ -63,6 +63,13 @@ void AIElevator::Action()
 		return;
 	}
 
+	// 移動先が決まってない状態の呼び出しは無効
+	bool canMove = floor != nextFloor;
+	if (!canMove) 
+	{
+		return;
+	}
+
 	beforeLocation = GetActorLocation();
 	actionRunningTime = 0.0f;
 	isAction = true;

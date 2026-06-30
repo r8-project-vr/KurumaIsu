@@ -39,13 +39,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	float moveDistance = 200.0f;
 	
+	// 現在の階数
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
+	int floor = 1;
 private:
 	FVector beforeLocation = FVector::Zero();
 
 	bool isAction = false;
-	int floor = floorMin;
-	int nextFloor = floor;
 	float actionRunningTime = 0.0f;
+
+
+	// 移動先の階数
+	int nextFloor = floor;
 
 public:	
 	// Called every frame
