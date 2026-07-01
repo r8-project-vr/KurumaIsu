@@ -23,10 +23,44 @@ void AILockerDoor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	actionRunningTime += DeltaTime;
+
+	if (isAction) 
+	{
+		bool isCompleted = actionRunningTime >= moveTime;
+		if (isCompleted)
+		{
+			if (isOpen)
+			{
+				isOpen = false;
+			}
+			else
+			{
+				isOpen = true;
+			}
+
+			isAction = false;
+			return;
+		}
+
+		float angle = moveAngle / moveTime;
+		if (isOpen)
+		{
+			angle *= -1.0f;
+		}
+
+		AddActorLocalRotation(FRotator(0.0f, angle * DeltaTime, 0.0f));
+	}
 }
 
 void AILockerDoor::Action()
 {
+	if (isAction) 
+	{
+		return;
+	}
 
+	actionRunningTime = 0.0f;
+	isAction = true;
 }
 

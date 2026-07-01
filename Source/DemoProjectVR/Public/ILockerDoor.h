@@ -24,6 +24,20 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void Action() override;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	float moveTime = 1.25f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	float moveAngle = 120.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	bool isLeftOpen = false;
+
+private:
+	bool isAction = false;
+	bool isOpen = false;
+	float actionRunningTime = 0.0f;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
