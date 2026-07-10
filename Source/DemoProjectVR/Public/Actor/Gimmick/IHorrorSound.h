@@ -35,12 +35,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-	UFUNCTION(BlueprintCallable)
-	void Action() override;
-
 	bool IsPlayingCheck();
-
-	void GimmickPlay();
 
 	bool SetCamera();
 
@@ -50,6 +45,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION(BlueprintCallable)
+	void Action() override;
+
+	void GimmickPlay();
 private:
 	// 音源
 	UPROPERTY(EditAnywhere, Category = "Setting")
