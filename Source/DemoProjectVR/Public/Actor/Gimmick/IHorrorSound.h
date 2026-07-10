@@ -7,6 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "Sound/SoundBase.h"
 #include "Components/AudioComponent.h"
+#include "Sound/SoundAttenuation.h"
 #include "DebugHelper.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/CameraComponent.h"
@@ -43,20 +44,26 @@ protected:
 
 	bool SetCamera();
 
+	void GenerateAudioComponent();
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 private:
+	// 音源
 	UPROPERTY(EditAnywhere, Category = "Setting")
 	USoundBase* sound;
 
-	UPROPERTY(EditAnywhere, Category = "Setting")
 	UAudioComponent* audioComponent;
+
+	// サウンド減衰
+	UPROPERTY(EditAnywhere, Category = "Setting")
+	USoundAttenuation* soundAttenuation;
 
 	// プレイヤー検知範囲
 	UPROPERTY(EditAnywhere, Category = "Setting")
-	float detectionRadius = 10.0f;
+	float detectionRadius = 1000.0f;
 
 	// ギミックタイプ：心電図かナースコールか
 	UPROPERTY(EditAnywhere, Category = "Setting")

@@ -7,14 +7,15 @@ AIHorrorSound::AIHorrorSound()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+		
+	GenerateAudioComponent();
 }
 
 // Called when the game starts or when spawned
 void AIHorrorSound::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	bool isNull = !audioComponent || !sound;
 	if (isNull) 
 	{
@@ -25,6 +26,15 @@ void AIHorrorSound::BeginPlay()
 		// サウンドデータをコンポーネントに渡す
 		audioComponent->SetSound(sound);
 		
+		// サウンド減衰を設定
+		if (soundAttenuation)
+		{
+			audioComponent->AttenuationSettings = soundAttenuation;
+		}
+		else
+		{
+			DEBUG_PRINT("%s : SoundAttenuation が設定されていません。", *GetName());
+		}
 
 		// デリゲート登録
 		bool isECG = gimmickType == EHorrorSoundGimmickType::ElectroCardiogram;
@@ -121,5 +131,12 @@ bool AIHorrorSound::SetCamera()
 	}
 
 	return true;
+}
+
+// オーディオコンポーネントの生成
+void AIHorrorSound::GenerateAudioComponent()
+{
+	audioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComp"));
+	audioComponent->SetupAttachment(RootComponent);
 }
 
