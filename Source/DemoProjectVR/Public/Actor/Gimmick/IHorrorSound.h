@@ -37,6 +37,8 @@ protected:
 	
 	bool IsPlayingCheck();
 
+	bool IsDistanceCheck();
+
 	bool SetCamera();
 
 	void GenerateAudioComponent();
@@ -48,6 +50,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Action() override;
 
+	UFUNCTION()
 	void GimmickPlay();
 private:
 	// 音源

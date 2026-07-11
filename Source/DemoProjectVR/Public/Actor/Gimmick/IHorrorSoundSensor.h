@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GimmickInterface.h"
+#include "DebugHelper.h"
 #include "IHorrorSound.h"
 
 #include "IHorrorSoundSensor.generated.h"
@@ -40,5 +41,6 @@ private:
 
 public:
 	// このアクターが管理するギミックリスト
+	UPROPERTY(EditAnywhere, Category = "Setting")
 	TArray<AIHorrorSound*> gimmickes;
 };

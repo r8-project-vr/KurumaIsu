@@ -29,7 +29,7 @@ void AIHorrorSound::BeginPlay()
 		// サウンド減衰を設定
 		if (soundAttenuation)
 		{
-			audioComponent->AttenuationSettings = soundAttenuation;
+			audioComponent->AttenuationSettings = soundAttenuation;			
 		}
 		else
 		{
@@ -80,7 +80,7 @@ void AIHorrorSound::Tick(float DeltaTime)
 		audioComponent->SetPitchMultiplier(newTempo);
 	}
 
-	bool isActive = distance <= detectionRadius;
+	bool isActive = IsDistanceCheck();
 	isActive &= !IsPlayingCheck();
 	isActive &= !hasControll;
 	if (isActive)
@@ -103,10 +103,22 @@ bool AIHorrorSound::IsPlayingCheck()
 	return rtv;
 }
 
+// 動作距離チェック
+bool AIHorrorSound::IsDistanceCheck()
+{
+	FVector camPos = camera->GetComponentLocation();
+	FVector thisPos = GetActorLocation();
+	float distance = FVector::Distance(camPos, thisPos);
+	
+	bool rtv = distance <= detectionRadius;
+
+	return rtv;
+}
+
 // ギミック再生
 void AIHorrorSound::GimmickPlay()
 {
-	if(!IsPlayingCheck() && isPlayLoop)
+	if(IsDistanceCheck() && !IsPlayingCheck() && isPlayLoop)
 	{
 		audioComponent->Play();
 	}

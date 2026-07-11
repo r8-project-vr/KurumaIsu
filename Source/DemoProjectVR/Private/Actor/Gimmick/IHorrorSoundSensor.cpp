@@ -32,7 +32,7 @@ void AIHorrorSoundSensor::Action()
 	{
 		if (onActive)
 		{
-			SoundDisable();
+			//SoundDisable();
 		}
 		else
 		{
@@ -46,9 +46,13 @@ void AIHorrorSoundSensor::SoundEnable()
 {
 	onActive = true;
 
+	DEBUG_PRINT("%s : SoundGimmick -> %s", *GetName(), (onActive ? TEXT("true") : TEXT("false")));
+
 	for (AIHorrorSound* gimmick : gimmickes)
 	{
 		gimmick->GimmickPlay();
+
+		DEBUG_PRINT("%s : GimmickPlay -> %s", *GetName(), *(gimmick->GetName()));
 	}
 }
 
@@ -56,6 +60,8 @@ void AIHorrorSoundSensor::SoundEnable()
 void AIHorrorSoundSensor::SoundDisable()
 {
 	onActive = false;
+
+	DEBUG_PRINT("%s : SoundGimmick -> %s", *GetName(), (onActive ? TEXT("true") : TEXT("false")));
 
 	for (AIHorrorSound* gimmick : gimmickes)
 	{
