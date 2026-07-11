@@ -115,6 +115,12 @@ bool AIHorrorSound::IsDistanceCheck()
 	return rtv;
 }
 
+// ギミック初期化
+void AIHorrorSound::GimmickInitialize()
+{
+	isPlayLoop = true;
+}
+
 // ギミック再生
 void AIHorrorSound::GimmickPlay()
 {

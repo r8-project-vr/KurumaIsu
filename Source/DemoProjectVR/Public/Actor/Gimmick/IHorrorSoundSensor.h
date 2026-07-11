@@ -27,10 +27,14 @@ protected:
 	void Action() override;
 
 	UFUNCTION(BlueprintCallable)
+	void SoundPlayLoop();
+
+	UFUNCTION(BlueprintCallable)
 	void SoundEnable();
 
 	UFUNCTION(BlueprintCallable)
 	void SoundDisable();
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

@@ -15,7 +15,6 @@ AIHorrorSoundSensor::AIHorrorSoundSensor()
 void AIHorrorSoundSensor::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -23,6 +22,10 @@ void AIHorrorSoundSensor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (onActive)
+	{
+		SoundPlayLoop();
+	}
 }
 
 // 何もしない
@@ -32,11 +35,23 @@ void AIHorrorSoundSensor::Action()
 	{
 		if (onActive)
 		{
-			//SoundDisable();
+			SoundDisable();
 		}
 		else
 		{
 			SoundEnable();
+		}
+	}
+}
+
+// サウンドループ再生
+void AIHorrorSoundSensor::SoundPlayLoop()
+{
+	for (AIHorrorSound* gimmick : gimmickes)
+	{
+		if (!gimmick->IsPlayingCheck())
+		{
+			gimmick->GimmickPlay();
 		}
 	}
 }
@@ -46,13 +61,10 @@ void AIHorrorSoundSensor::SoundEnable()
 {
 	onActive = true;
 
-	DEBUG_PRINT("%s : SoundGimmick -> %s", *GetName(), (onActive ? TEXT("true") : TEXT("false")));
-
 	for (AIHorrorSound* gimmick : gimmickes)
 	{
+		gimmick->GimmickInitialize();
 		gimmick->GimmickPlay();
-
-		DEBUG_PRINT("%s : GimmickPlay -> %s", *GetName(), *(gimmick->GetName()));
 	}
 }
 
@@ -60,8 +72,6 @@ void AIHorrorSoundSensor::SoundEnable()
 void AIHorrorSoundSensor::SoundDisable()
 {
 	onActive = false;
-
-	DEBUG_PRINT("%s : SoundGimmick -> %s", *GetName(), (onActive ? TEXT("true") : TEXT("false")));
 
 	for (AIHorrorSound* gimmick : gimmickes)
 	{

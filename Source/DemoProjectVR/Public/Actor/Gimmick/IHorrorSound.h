@@ -35,8 +35,6 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-	bool IsPlayingCheck();
-
 	bool IsDistanceCheck();
 
 	bool SetCamera();
@@ -51,7 +49,13 @@ public:
 	void Action() override;
 
 	UFUNCTION()
+	void GimmickInitialize();
+
+	UFUNCTION()
 	void GimmickPlay();
+
+	UFUNCTION()
+	bool IsPlayingCheck();
 private:
 	// 音源
 	UPROPERTY(EditAnywhere, Category = "Setting")
