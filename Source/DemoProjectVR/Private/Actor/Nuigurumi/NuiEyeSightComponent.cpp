@@ -5,7 +5,7 @@
 
 #include "DrawDebugHelpers.h"
 #include "Engine/EngineTypes.h"
-#include "GimmickInterface.h"
+#include "Actor/Gimmick/GimmickInterface.h"
 #include "InputCoreTypes.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"

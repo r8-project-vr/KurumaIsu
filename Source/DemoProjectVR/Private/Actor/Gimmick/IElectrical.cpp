@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "IElectrical.h"
+#include "Actor/Gimmick/IElectrical.h"
 
 // Sets default values
 AIElectrical::AIElectrical()

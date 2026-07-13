@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ISlideDoor.h"
+#include "Actor/Gimmick/ISlideDoor.h"
 #include "math.h"
 
 // Sets default values

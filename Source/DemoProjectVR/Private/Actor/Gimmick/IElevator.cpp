@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "IElevator.h"
+#include "Actor/Gimmick/IElevator.h"
 
 // Sets default values
 AIElevator::AIElevator()
