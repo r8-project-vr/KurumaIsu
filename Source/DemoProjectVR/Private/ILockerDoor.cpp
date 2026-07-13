@@ -48,6 +48,10 @@ void AILockerDoor::Tick(float DeltaTime)
 		{
 			angle *= -1.0f;
 		}
+		if (isLeftOpen)
+		{
+			angle *= -1.0f;
+		}
 
 		AddActorLocalRotation(FRotator(0.0f, angle * DeltaTime, 0.0f));
 	}
