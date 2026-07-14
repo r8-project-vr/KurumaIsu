@@ -48,7 +48,7 @@ ANuigurumi::ANuigurumi()
 	InteractionPromptWidget->SetVisibility(false);
 	InteractionPromptWidget->SetWidgetClass(UNuiInteractionPromptWidget::StaticClass());
 
-	InteractionPromptText = FText::FromString(TEXT("작동"));
+	InteractionPromptText = FText::GetEmpty();
 	InteractionPromptFont = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 24);
 }
 

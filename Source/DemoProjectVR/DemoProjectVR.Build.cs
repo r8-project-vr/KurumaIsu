@@ -9,7 +9,7 @@ public class DemoProjectVR : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         // 共通
-        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "BleGoodies" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "BleGoodies", "AIModule", "NavigationSystem" });
 
         // Windowsだけ
         if (Target.Platform == UnrealTargetPlatform.Win64)
