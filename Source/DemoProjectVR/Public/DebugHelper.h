@@ -12,6 +12,9 @@
     UE_LOG(LogTemp, Warning, TEXT("%s"), *Msg); \
 }
 
+#define ENUM_STR(Value) \
+    *StaticEnum<std::decay_t<decltype(Value)>>()->GetNameStringByValue((int64)Value)
+
 #else
 
 #define DEBUG_PRINT(Format, ...)
