@@ -40,6 +40,8 @@ void AIItem::Action()
 		inventory->inventory.Add(itemType);
 
 		DEBUG_PRINT("%s : Get Item -> %s", *GetName(), ENUM_STR(itemType));
+
+		Destroy();
 	}
 }
 
