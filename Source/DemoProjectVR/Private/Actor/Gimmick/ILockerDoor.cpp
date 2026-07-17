@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ILockerDoor.h"
+#include "Actor/Gimmick/ILockerDoor.h"
 
 // Sets default values
 AILockerDoor::AILockerDoor()
@@ -45,6 +45,10 @@ void AILockerDoor::Tick(float DeltaTime)
 
 		float angle = moveAngle / moveTime;
 		if (isOpen)
+		{
+			angle *= -1.0f;
+		}
+		if (isLeftOpen)
 		{
 			angle *= -1.0f;
 		}
