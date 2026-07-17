@@ -20,6 +20,8 @@ void UInventoryComponent::ShowItems()
 
 	for (EItemType& item : inventory)
 	{
+		count++;
+
 		DEBUG_PRINT("%d -> %s", count, ENUM_STR(item));
 	}
 }

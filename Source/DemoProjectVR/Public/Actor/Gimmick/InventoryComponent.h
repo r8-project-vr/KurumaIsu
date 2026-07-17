@@ -10,7 +10,7 @@
 
 #include "InventoryComponent.generated.h"
 
-UCLASS()
+UCLASS(meta=(BlueprintSpawnableComponent))
 class DEMOPROJECTVR_API UInventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()

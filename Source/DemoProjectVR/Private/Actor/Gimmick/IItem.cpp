@@ -38,6 +38,8 @@ void AIItem::Action()
 	if (inventory)
 	{
 		inventory->inventory.Add(itemType);
+
+		DEBUG_PRINT("%s : Get Item -> %s", *GetName(), ENUM_STR(itemType));
 	}
 }
 
