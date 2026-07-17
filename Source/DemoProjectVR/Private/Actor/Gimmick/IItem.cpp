@@ -33,6 +33,11 @@ void AIItem::Tick(float DeltaTime)
 // アイテムの取得
 void AIItem::Action()
 {
-	DEBUG_PRINT("%s : Get Item -> %s", *GetName(), ENUM_STR(itemType));
+	APawn* player = GetWorld()->GetFirstPlayerController()->GetPawn();
+	UInventoryComponent* inventory = player->FindComponentByClass<UInventoryComponent>();
+	if (inventory)
+	{
+		inventory->inventory.Add(itemType);
+	}
 }
 

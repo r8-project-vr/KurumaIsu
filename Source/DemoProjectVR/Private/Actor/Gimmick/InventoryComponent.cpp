@@ -1,27 +1,26 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Actor/Gimmick/InventoryComponent.h"
 
-// Sets default values
-AInventoryComponent::AInventoryComponent()
-{
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-}
 
 // Called when the game starts or when spawned
-void AInventoryComponent::BeginPlay()
+void UInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
-// Called every frame
-void AInventoryComponent::Tick(float DeltaTime)
+// 所持アイテムの表示
+void UInventoryComponent::ShowItems()
 {
-	Super::Tick(DeltaTime);
+	DEBUG_PRINT("%s : 総アイテム数 -> %d\n", *GetName(), inventory.Num());
 
+	int count = 0;
+
+	for (EItemType& item : inventory)
+	{
+		DEBUG_PRINT("%d -> %s", count, ENUM_STR(item));
+	}
 }
 

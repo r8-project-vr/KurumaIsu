@@ -7,17 +7,10 @@
 #include "GameFramework/Actor.h"
 #include "GimmickInterface.h"
 #include "DebugHelper.h"
+#include "Actor/Gimmick/InventoryComponent.h"
+#include "Actor/Gimmick/ItemType.h"
 
 #include "IItem.generated.h"
-
-UENUM(BlueprintType)
-enum class EItemType : uint8
-{
-	None UMETA(DisplayName = "None"),
-    ExitKey UMETA(DisplayName="ExitKey"),
-    Fuse UMETA(DisplayName="Fuse"),
-    PhotoFrame UMETA(DisplayName="PhotoFrame")
-};
 
 UCLASS()
 class DEMOPROJECTVR_API AIItem : public AActor, public IGimmickInterface
