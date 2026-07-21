@@ -6,6 +6,8 @@
 #include "GameFramework/Actor.h"
 #include "GimmickInterface.h"
 #include "DebugHelper.h"
+#include "Engine/TriggerBox.h"
+#include "GameFramework/Character.h"
 #include "IHorrorSound.h"
 
 #include "IHorrorSoundSensor.generated.h"
@@ -34,6 +36,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void SoundDisable();
+
+	UFUNCTION()
+	void OnTriggerEnter(AActor* overlappedActor, AActor* otherActor);
 	
 public:	
 	// Called every frame
@@ -47,4 +52,8 @@ public:
 	// このアクターが管理するギミックリスト
 	UPROPERTY(EditAnywhere, Category = "Setting")
 	TArray<AIHorrorSound*> gimmickes;
+
+	// 起動元になるトリガーボックス
+	UPROPERTY(EditAnywhere, Category = "Setting")
+	ATriggerBox* eventTriggerBox;
 };
