@@ -31,7 +31,13 @@ protected:
 	float moveDistance = 200.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	float scaleAmount = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	bool isLeftOpen = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	bool isAxisChanged = false;
 
 private:
 	FVector beforeLocation = FVector::Zero();
