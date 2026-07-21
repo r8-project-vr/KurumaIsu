@@ -45,9 +45,6 @@ private:
 	bool isAction = false;
 	float actionRunningTime = 0.0f;
 
-	// 現在の階数
-	int floor = 1;
-
 	// 移動先の階数
 	int nextFloor = floor;
 
@@ -60,4 +57,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	int floorMax = 3;
+
+	// 現在の階数
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	int floor = 1;
 };
