@@ -16,6 +16,7 @@ void AIElevator::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	nextFloor = floor;
 }
 
 // Called every frame
@@ -85,6 +86,8 @@ bool AIElevator::MoveUp()
 		nextFloor++;
 	}
 
+	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
+
 	return canMove;
 }
 
@@ -97,6 +100,8 @@ bool AIElevator::MoveDown()
 	{
 		nextFloor--;
 	}
+
+	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
 
 	return canMove;
 }

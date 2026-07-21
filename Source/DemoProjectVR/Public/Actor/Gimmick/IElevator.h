@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GimmickInterface.h"
+#include "DebugHelper.h"
 
 #include "IElevator.generated.h"
 
@@ -46,7 +47,7 @@ private:
 	float actionRunningTime = 0.0f;
 
 	// 移動先の階数
-	int nextFloor = floor;
+	int nextFloor = 0;
 
 public:	
 	// Called every frame
