@@ -79,3 +79,16 @@ void AIHorrorSoundSensor::SoundDisable()
 	}
 }
 
+// ギミック起動
+void AIHorrorSoundSensor::OnTriggerEnter(AActor* overlappedActor, AActor* otherActor)
+{
+	DEBUG_PRINT("%s : トリガーエンター", *GetName());
+
+	bool onPlayerEnter = otherActor != nullptr;
+	onPlayerEnter &= otherActor->IsA(ACharacter::StaticClass());
+	if (onPlayerEnter)
+	{
+		SoundEnable();
+		DEBUG_PRINT("%s : プレイヤートリガーエンター", *GetName());
+	}
+}

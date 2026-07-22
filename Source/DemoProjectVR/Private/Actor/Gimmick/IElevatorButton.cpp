@@ -27,6 +27,7 @@ void AIElevatorButton::Tick(float DeltaTime)
 
 void AIElevatorButton::Action()
 {
+	// BPのメソッドを検索
 	UFunction* interface = elevatorActor->FindFunction(TEXT("MoveElevator"));
 
 	if (interface)
