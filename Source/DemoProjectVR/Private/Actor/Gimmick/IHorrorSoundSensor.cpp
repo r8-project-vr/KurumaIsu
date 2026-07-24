@@ -31,16 +31,13 @@ void AIHorrorSoundSensor::Tick(float DeltaTime)
 // 何もしない
 void AIHorrorSoundSensor::Action()
 {
-	// デバッグ用
+	if (onActive)
 	{
-		if (onActive)
-		{
-			SoundDisable();
-		}
-		else
-		{
-			SoundEnable();
-		}
+		SoundDisable();
+	}
+	else
+	{
+		SoundEnable();
 	}
 }
 
@@ -76,19 +73,5 @@ void AIHorrorSoundSensor::SoundDisable()
 	for (AIHorrorSound* gimmick : gimmickes)
 	{
 		gimmick->Action();
-	}
-}
-
-// ギミック起動
-void AIHorrorSoundSensor::OnTriggerEnter(AActor* overlappedActor, AActor* otherActor)
-{
-	DEBUG_PRINT("%s : トリガーエンター", *GetName());
-
-	bool onPlayerEnter = otherActor != nullptr;
-	onPlayerEnter &= otherActor->IsA(ACharacter::StaticClass());
-	if (onPlayerEnter)
-	{
-		SoundEnable();
-		DEBUG_PRINT("%s : プレイヤートリガーエンター", *GetName());
 	}
 }

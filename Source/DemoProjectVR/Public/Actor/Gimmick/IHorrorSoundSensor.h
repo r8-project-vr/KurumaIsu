@@ -52,8 +52,4 @@ public:
 	// このアクターが管理するギミックリスト
 	UPROPERTY(EditAnywhere, Category = "Setting")
 	TArray<AIHorrorSound*> gimmickes;
-
-	// 起動元になるトリガーボックス
-	UPROPERTY(EditAnywhere, Category = "Setting")
-	ATriggerBox* eventTriggerBox;
 };
