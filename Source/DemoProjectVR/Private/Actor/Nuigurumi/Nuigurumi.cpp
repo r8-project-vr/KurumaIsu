@@ -17,18 +17,35 @@ void UNuiInteractionPromptWidget::BuildPrompt(
 	const FLinearColor& TextColor,
 	const FLinearColor& BackgroundColor)
 {
-	UBorder* Background = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("Background"));
-	UTextBlock* PromptText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("PromptText"));
+	UBorder* Background = WidgetTree
+		? Cast<UBorder>(WidgetTree->FindWidget(TEXT("Background")))
+		: nullptr;
+	UTextBlock* PromptText = WidgetTree
+		? Cast<UTextBlock>(WidgetTree->FindWidget(TEXT("PromptText")))
+		: nullptr;
 
-	PromptText->SetText(Text);
-	PromptText->SetFont(Font);
-	PromptText->SetColorAndOpacity(FSlateColor(TextColor));
-	PromptText->SetJustification(ETextJustify::Center);
+	if (WidgetTree && WidgetTree->RootWidget == nullptr)
+	{
+		Background = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("Background"));
+		PromptText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("PromptText"));
 
-	Background->SetBrushColor(BackgroundColor);
-	Background->SetPadding(FMargin(14.0f, 7.0f));
-	Background->SetContent(PromptText);
-	WidgetTree->RootWidget = Background;
+		Background->SetPadding(FMargin(14.0f, 7.0f));
+		Background->SetContent(PromptText);
+		WidgetTree->RootWidget = Background;
+	}
+
+	if (PromptText)
+	{
+		PromptText->SetText(Text);
+		PromptText->SetFont(Font);
+		PromptText->SetColorAndOpacity(FSlateColor(TextColor));
+		PromptText->SetJustification(ETextJustify::Center);
+	}
+
+	if (Background)
+	{
+		Background->SetBrushColor(BackgroundColor);
+	}
 }
 
 // Sets default values
@@ -49,6 +66,7 @@ ANuigurumi::ANuigurumi()
 	InteractionPromptWidget->SetWidgetClass(UNuiInteractionPromptWidget::StaticClass());
 
 	InteractionPromptText = FText::GetEmpty();
+	InteractionPromptWidgetClass = UNuiInteractionPromptWidget::StaticClass();
 	InteractionPromptFont = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 24);
 }
 
@@ -56,6 +74,11 @@ ANuigurumi::ANuigurumi()
 void ANuigurumi::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UClass* PromptWidgetClass = InteractionPromptWidgetClass
+		? InteractionPromptWidgetClass.Get()
+		: UNuiInteractionPromptWidget::StaticClass();
+	InteractionPromptWidget->SetWidgetClass(PromptWidgetClass);
 
 	InteractionPromptWidget->InitWidget();
 	if (UNuiInteractionPromptWidget* PromptWidget = Cast<UNuiInteractionPromptWidget>(InteractionPromptWidget->GetUserWidgetObject()))
@@ -109,7 +132,7 @@ void ANuigurumi::Tick(float DeltaTime)
 	const FVector TargetLocation = CameraLocation
 		+ CameraRotation.Vector() * PlayerViewOffset.X
 		+ CameraMatrix.GetScaledAxis(EAxis::Y) * PlayerViewOffset.Y
-		+ CameraMatrix.GetScaledAxis(EAxis::Z) * PlayerViewOffset.Z;
+		+ (CameraMatrix.GetScaledAxis(EAxis::Z) * (PlayerViewOffset.Z - 30.0f));
 
 	const FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FollowInterpSpeed);
 	SetActorLocation(NewLocation);

@@ -37,7 +37,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight")
 	float SightAngle = 60.0f;
 
-	// このタグを持つActorもDetectedActorに入れます
+	//角度を調節します（Pitch）
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight")
+	float SightPitchOffset = 0.0f;
+
+	// このタグを持つActorもDetectedActorに入れます -> 戦闘がないので今は使わないです
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight")
 	FName TargetTag = TEXT("Monster");
 

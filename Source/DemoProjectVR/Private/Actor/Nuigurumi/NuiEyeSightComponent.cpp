@@ -49,7 +49,7 @@ void UNuiEyeSightComponent::DetectObject()
 
 	// 親Actorの情報
 	FVector OwnerLocation = Owner->GetActorLocation();
-	FVector Forward = Owner->GetActorForwardVector();
+	FVector Forward = Owner->GetActorRotation().RotateVector(FRotator(SightPitchOffset, 0.0f, 0.0f).Vector());
 
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECC_WorldStatic));

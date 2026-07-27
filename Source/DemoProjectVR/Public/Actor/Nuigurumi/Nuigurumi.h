@@ -7,7 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "Nuigurumi.generated.h"
 
-UCLASS()
+UCLASS(Blueprintable)
 class DEMOPROJECTVR_API UNuiInteractionPromptWidget : public UUserWidget
 {
 	GENERATED_BODY()
@@ -60,6 +60,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
 	FText InteractionPromptText;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
+	TSubclassOf<UUserWidget> InteractionPromptWidgetClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
 	FVector InteractionPromptOffset = FVector(0.0f, 0.0f, 30.0f);
