@@ -5,7 +5,7 @@
 
 #include "DrawDebugHelpers.h"
 #include "Engine/EngineTypes.h"
-#include "GimmickInterface.h"
+#include "Actor/Gimmick/GimmickInterface.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 // Sets default values for this component's properties
