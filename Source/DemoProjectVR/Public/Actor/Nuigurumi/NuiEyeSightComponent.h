@@ -37,7 +37,11 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight")
 	float SightAngle = 60.0f;
 
-	// このタグを持つActorもDetectedActorに入れます
+	//角度を調節します（Pitch）
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight")
+	float SightPitchOffset = 0.0f;
+
+	// このタグを持つActorもDetectedActorに入れます -> 戦闘がないので今は使わないです
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight")
 	FName TargetTag = TEXT("Monster");
 
@@ -47,10 +51,6 @@ public:
 	// GimmickInterfaceを持つActorを検出対象にします
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gimmick")
 	bool bDetectGimmickInterface = false;
-
-	// VR機器なしで確認するためのキーボードデバッグ入力です
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gimmick|Debug")
-	bool bEnableKeyboardDebugAction = true;
 
 	UPROPERTY(BlueprintAssignable, Category="EyeSight")
 	FOnDetectionChanged OnDetectionChanged;
@@ -80,13 +80,6 @@ public:
 	// 入力ボタンから呼ぶと、今見ているギミックを作動させます
 	UFUNCTION(BlueprintCallable, Category = "Gimmick")
 	bool TryActionDetectedGimmick(AActor* InstigatorActor = nullptr);
-
-private:
-	void HandleDebugActionInput();
-	bool TryActionElevatorDebug(AActor* GimmickActor) const;
-	bool TryCallFunctionByName(AActor* TargetActor, const FName FunctionName) const;
-	bool IsDetectionTarget(AActor* TargetActor) const;
-	bool IsGimmickActor(AActor* TargetActor) const;
 
 private:
 	UPROPERTY()
