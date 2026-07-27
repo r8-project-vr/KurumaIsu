@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "ISlideDoor.h"
+#include "Actor/Gimmick/ISlideDoor.h"
 #include "math.h"
 
 // Sets default values
@@ -21,6 +21,9 @@ void AISlideDoor::BeginPlay()
 	{
 		moveDistance *= -1.0f;
 	}
+
+	// 移動量をスケール比に調整
+	moveDistance *= scaleAmount;
 }
 
 // Called every frame
@@ -33,13 +36,27 @@ void AISlideDoor::Tick(float DeltaTime)
 	{
 		FVector targetLocation = beforeLocation;
 
-		if (isOpen)
+		if (isAxisChanged) 
 		{
-			targetLocation.X -= moveDistance;
+			if (isOpen)
+			{
+				targetLocation.Y -= moveDistance;
+			}
+			else
+			{
+				targetLocation.Y += moveDistance;
+			}
 		}
 		else
 		{
-			targetLocation.X += moveDistance;
+			if (isOpen)
+			{
+				targetLocation.X -= moveDistance;
+			}
+			else
+			{
+				targetLocation.X += moveDistance;
+			}
 		}
 
 		float ratio = actionRunningTime / moveTime;

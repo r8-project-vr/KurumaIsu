@@ -1,59 +1,52 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
-// エレベーター（インターフェース利用）
+// スライドドア（インターフェース利用）
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "GimmickInterface.h"
 
-#include "IElevator.generated.h"
+#include "ISlideDoor.generated.h"
 
 UCLASS()
-class DEMOPROJECTVR_API AIElevator : public AActor , public IGimmickInterface
+class DEMOPROJECTVR_API AISlideDoor : public AActor, public IGimmickInterface
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
-	AIElevator();
+	AISlideDoor();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-		
+
 	UFUNCTION(BlueprintCallable)
 	void Action() override;
 
-	UFUNCTION(BlueprintCallable)
-	bool MoveUp();
-
-	UFUNCTION(BlueprintCallable)
-	bool MoveDown();
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	UCurveFloat* moveCurve;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	float moveTime = 3.5f;
+	float moveTime = 1.25f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	float moveDistance = 200.0f;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	float scaleAmount = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	bool isLeftOpen = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	bool isAxisChanged = false;
+
 private:
 	FVector beforeLocation = FVector::Zero();
 
 	bool isAction = false;
-	int floor = floorMin;
-	int nextFloor = floor;
+	bool isOpen = false;
 	float actionRunningTime = 0.0f;
 
-public:	
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	int floorMin = 1;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	int floorMax = 3;
 };

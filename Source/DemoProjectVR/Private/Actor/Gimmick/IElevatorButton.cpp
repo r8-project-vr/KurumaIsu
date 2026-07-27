@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "IElevatorButton.h"
+#include "Actor/Gimmick/IElevatorButton.h"
 
 // Sets default values
 AIElevatorButton::AIElevatorButton()
@@ -27,6 +27,7 @@ void AIElevatorButton::Tick(float DeltaTime)
 
 void AIElevatorButton::Action()
 {
+	// BPのメソッドを検索
 	UFunction* interface = elevatorActor->FindFunction(TEXT("MoveElevator"));
 
 	if (interface)

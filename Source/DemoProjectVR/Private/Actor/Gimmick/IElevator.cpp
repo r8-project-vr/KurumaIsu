@@ -1,7 +1,7 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "IElevator.h"
+#include "Actor/Gimmick/IElevator.h"
 
 // Sets default values
 AIElevator::AIElevator()
@@ -16,6 +16,7 @@ void AIElevator::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	nextFloor = floor;
 }
 
 // Called every frame
@@ -63,6 +64,13 @@ void AIElevator::Action()
 		return;
 	}
 
+	// 移動先が決まってない状態の呼び出しは無効
+	bool canMove = floor != nextFloor;
+	if (!canMove) 
+	{
+		return;
+	}
+
 	beforeLocation = GetActorLocation();
 	actionRunningTime = 0.0f;
 	isAction = true;
@@ -78,6 +86,8 @@ bool AIElevator::MoveUp()
 		nextFloor++;
 	}
 
+	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
+
 	return canMove;
 }
 
@@ -90,6 +100,8 @@ bool AIElevator::MoveDown()
 	{
 		nextFloor--;
 	}
+
+	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
 
 	return canMove;
 }
