@@ -36,9 +36,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void SoundDisable();
-
-	UFUNCTION()
-	void OnTriggerEnter(AActor* overlappedActor, AActor* otherActor);
 	
 public:	
 	// Called every frame
@@ -52,8 +49,4 @@ public:
 	// このアクターが管理するギミックリスト
 	UPROPERTY(EditAnywhere, Category = "Setting")
 	TArray<AIHorrorSound*> gimmickes;
-
-	// 起動元になるトリガーボックス
-	UPROPERTY(EditAnywhere, Category = "Setting")
-	ATriggerBox* eventTriggerBox;
 };
