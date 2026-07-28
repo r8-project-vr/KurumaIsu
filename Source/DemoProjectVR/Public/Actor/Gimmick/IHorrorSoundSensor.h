@@ -36,9 +36,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void SoundDisable();
-
-	UFUNCTION()
-	void OnTriggerEnter(AActor* overlappedActor, AActor* otherActor);
 	
 public:	
 	// Called every frame
