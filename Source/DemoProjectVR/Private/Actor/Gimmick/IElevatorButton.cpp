@@ -34,10 +34,10 @@ void AIElevatorButton::Action()
 	{
 		struct 
 		{
-			bool isUp;
+			int next;
 		} Param;
 
-		Param.isUp = isMoveUp;
+		Param.next = nextFloor;
 
 		elevatorActor->ProcessEvent(interface, &Param);
 	}

@@ -42,12 +42,26 @@ void AIElevator::Tick(float DeltaTime)
 		float elapsedRaito = actionRunningTime / moveTime;
 		float ratio = moveCurve->GetFloatValue(elapsedRaito);
 
-		
-		bool isCompleted = elapsedRaito > 1.0f;
+		bool isCompleted = elapsedRaito > 2.0f;
 		if (isCompleted)
 		{
-			floor = nextFloor;
+			if (isMoveUp) 
+			{
+				floor++;
+			}
+			else
+			{
+				floor--;
+			}
+
 			isAction = false;
+
+			bool isMoveComplete = floor == nextFloor;
+			if (!isMoveComplete)
+			{
+				Action();
+			}
+
 			return;
 		}
 
@@ -61,6 +75,7 @@ void AIElevator::Action()
 {
 	if (isAction)
 	{
+		DEBUG_PRINT("%s : Action中断 / 実行中により", *GetName());
 		return;
 	}
 
@@ -68,22 +83,25 @@ void AIElevator::Action()
 	bool canMove = floor != nextFloor;
 	if (!canMove) 
 	{
+		DEBUG_PRINT("%s : Action中断 / 移動先の未指定により", *GetName());
 		return;
 	}
 
 	beforeLocation = GetActorLocation();
+	beforeDoor1 = door1->GetActorLocation();
+	beforeDoor2 = door2->GetActorLocation();
 	actionRunningTime = 0.0f;
 	isAction = true;
 }
 
-bool AIElevator::MoveUp()
+bool AIElevator::MoveSet(int next)
 {
-	bool canMove = (floor + 1) <= floorMax;
-	canMove &= floor == nextFloor;
+	bool canMove = next <= floorMax;
+	canMove &= next >= floorMin;
 
 	if (canMove)
 	{
-		nextFloor++;
+		nextFloor = next;
 	}
 
 	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
@@ -91,18 +109,19 @@ bool AIElevator::MoveUp()
 	return canMove;
 }
 
-bool AIElevator::MoveDown()
+void AIElevator::DoorAction()
 {
-	bool canMove = (floor - 1) >= floorMin;
-	canMove &= floor == nextFloor;
+	float elapsedRaito = actionRunningTime / moveTime;
+	float ratio = moveCurve->GetFloatValue(elapsedRaito);
 
-	if (canMove)
-	{
-		nextFloor--;
-	}
+	//ドアの操作
+	FVector doorTargetLocation = beforeDoor1;
+	doorTargetLocation.X = doorMovePos;
 
-	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
+	FVector newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
+	FVector newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
 
-	return canMove;
+	SetActorLocation(newDoor1);
+	SetActorLocation(newDoor2);
 }
 

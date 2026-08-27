@@ -29,7 +29,7 @@ protected:
 	AIElevator* elevatorActor;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	bool isMoveUp = true;
+	int nextFloor = 1;
 
 public:	
 	// Called every frame
