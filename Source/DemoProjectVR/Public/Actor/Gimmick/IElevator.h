@@ -26,12 +26,6 @@ protected:
 	void Action() override;
 
 	UFUNCTION(BlueprintCallable)
-	bool MoveUp();
-
-	UFUNCTION(BlueprintCallable)
-	bool MoveDown();
-
-	UFUNCTION(BlueprintCallable)
 	bool MoveSet(int next);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")

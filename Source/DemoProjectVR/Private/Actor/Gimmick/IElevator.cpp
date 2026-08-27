@@ -93,36 +93,6 @@ void AIElevator::Action()
 	isAction = true;
 }
 
-bool AIElevator::MoveUp()
-{
-	bool canMove = (floor + 1) <= floorMax;
-	canMove &= floor == nextFloor;
-
-	if (canMove)
-	{
-		nextFloor++;
-	}
-
-	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
-
-	return canMove;
-}
-
-bool AIElevator::MoveDown()
-{
-	bool canMove = (floor - 1) >= floorMin;
-	canMove &= floor == nextFloor;
-
-	if (canMove)
-	{
-		nextFloor--;
-	}
-
-	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
-
-	return canMove;
-}
-
 bool AIElevator::MoveSet(int next)
 {
 	bool canMove = next <= floorMax;
