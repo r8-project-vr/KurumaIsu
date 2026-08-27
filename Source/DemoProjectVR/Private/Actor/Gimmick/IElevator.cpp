@@ -42,8 +42,7 @@ void AIElevator::Tick(float DeltaTime)
 		float elapsedRaito = actionRunningTime / moveTime;
 		float ratio = moveCurve->GetFloatValue(elapsedRaito);
 
-		
-		bool isCompleted = elapsedRaito > 1.0f;
+		bool isCompleted = elapsedRaito > 2.0f;
 		if (isCompleted)
 		{
 			if (isMoveUp) 
@@ -89,6 +88,8 @@ void AIElevator::Action()
 	}
 
 	beforeLocation = GetActorLocation();
+	beforeDoor1 = door1->GetActorLocation();
+	beforeDoor2 = door2->GetActorLocation();
 	actionRunningTime = 0.0f;
 	isAction = true;
 }
@@ -106,5 +107,21 @@ bool AIElevator::MoveSet(int next)
 	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
 
 	return canMove;
+}
+
+void AIElevator::DoorAction()
+{
+	float elapsedRaito = actionRunningTime / moveTime;
+	float ratio = moveCurve->GetFloatValue(elapsedRaito);
+
+	//ドアの操作
+	FVector doorTargetLocation = beforeDoor1;
+	doorTargetLocation.X = doorMovePos;
+
+	FVector newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
+	FVector newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
+
+	SetActorLocation(newDoor1);
+	SetActorLocation(newDoor2);
 }
 

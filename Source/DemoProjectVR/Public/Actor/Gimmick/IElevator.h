@@ -28,6 +28,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	bool MoveSet(int next);
 
+	UFUNCTION(BlueprintCallable)
+	void DoorAction();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	UCurveFloat* moveCurve;
 	
@@ -37,8 +40,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	float moveDistance = 200.0f;
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	AActor* door1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	AActor* door2;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	float doorMovePos = 33.33f;
 private:
 	FVector beforeLocation = FVector::Zero();
+	FVector beforeDoor1 = FVector::Zero();
+	FVector beforeDoor2 = FVector::Zero();
 
 	bool isAction = false;
 	float actionRunningTime = 0.0f;
