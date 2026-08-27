@@ -46,8 +46,23 @@ void AIElevator::Tick(float DeltaTime)
 		bool isCompleted = elapsedRaito > 1.0f;
 		if (isCompleted)
 		{
-			floor = nextFloor;
+			if (isMoveUp) 
+			{
+				floor++;
+			}
+			else
+			{
+				floor--;
+			}
+
 			isAction = false;
+
+			bool isMoveComplete = floor == nextFloor;
+			if (!isMoveComplete)
+			{
+				Action();
+			}
+
 			return;
 		}
 
@@ -61,6 +76,7 @@ void AIElevator::Action()
 {
 	if (isAction)
 	{
+		DEBUG_PRINT("%s : Action中断 / 実行中により", *GetName());
 		return;
 	}
 
@@ -68,6 +84,7 @@ void AIElevator::Action()
 	bool canMove = floor != nextFloor;
 	if (!canMove) 
 	{
+		DEBUG_PRINT("%s : Action中断 / 移動先の未指定により", *GetName());
 		return;
 	}
 
@@ -99,6 +116,21 @@ bool AIElevator::MoveDown()
 	if (canMove)
 	{
 		nextFloor--;
+	}
+
+	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
+
+	return canMove;
+}
+
+bool AIElevator::MoveSet(int next)
+{
+	bool canMove = next <= floorMax;
+	canMove &= next >= floorMin;
+
+	if (canMove)
+	{
+		nextFloor = next;
 	}
 
 	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
