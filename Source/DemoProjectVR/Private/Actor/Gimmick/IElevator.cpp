@@ -16,6 +16,26 @@ void AIElevator::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	/*TArray<UStaticMeshComponent*> Meshes;
+	GetComponents<UStaticMeshComponent>(Meshes);
+
+	for (UStaticMeshComponent* Mesh : Meshes)
+	{
+		if (Mesh->GetName() == TEXT("EvDoor1"))
+		{
+			door1 = Mesh;
+		}
+		else if (Mesh->GetName() == TEXT("EvDoor2"))
+		{
+			door2 = Mesh;
+		}
+	}
+
+	if (!door1 || !door2)
+	{
+		DEBUG_PRINT("%s : ドアが正常に参照できませんでした。", *GetName());
+	}*/
+
 	nextFloor = floor;
 }
 
@@ -88,8 +108,8 @@ void AIElevator::Action()
 	}
 
 	beforeLocation = GetActorLocation();
-	beforeDoor1 = door1->GetActorLocation();
-	beforeDoor2 = door2->GetActorLocation();
+	/*beforeDoor1 = door1->GetRelativeLocation();
+	beforeDoor2 = door2->GetRelativeLocation();*/
 	actionRunningTime = 0.0f;
 	isAction = true;
 }
@@ -111,17 +131,17 @@ bool AIElevator::MoveSet(int next)
 
 void AIElevator::DoorAction()
 {
-	float elapsedRaito = actionRunningTime / moveTime;
-	float ratio = moveCurve->GetFloatValue(elapsedRaito);
+	//float elapsedRaito = actionRunningTime / moveTime;
+	//float ratio = moveCurve->GetFloatValue(elapsedRaito);
 
-	//ドアの操作
-	FVector doorTargetLocation = beforeDoor1;
-	doorTargetLocation.X = doorMovePos;
+	////ドアの操作
+	//FVector doorTargetLocation = beforeDoor1;
+	//doorTargetLocation.X = doorMovePos;
 
-	FVector newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
-	FVector newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
+	//FVector newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
+	//FVector newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
 
-	SetActorLocation(newDoor1);
-	SetActorLocation(newDoor2);
+	//SetRelativeLocation(newDoor1);
+	//SetRelativeLocation(newDoor2);
 }
 

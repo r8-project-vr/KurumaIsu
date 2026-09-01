@@ -40,11 +40,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	float moveDistance = 200.0f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	AActor* door1;
+	UPROPERTY()
+	UStaticMeshComponent* door1;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	AActor* door2;
+	UPROPERTY()
+	UStaticMeshComponent* door2;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	float doorMovePos = 33.33f;
