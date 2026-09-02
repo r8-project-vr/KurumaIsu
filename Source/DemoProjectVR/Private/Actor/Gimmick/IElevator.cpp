@@ -9,6 +9,14 @@ AIElevator::AIElevator()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	root = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Root"));
+	RootComponent = root;
+
+	door1 = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Door1"));
+	door1->SetupAttachment(RootComponent);
+
+	door2 = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Door2"));
+	door2->SetupAttachment(RootComponent);
 }
 
 // Called when the game starts or when spawned
@@ -16,26 +24,6 @@ void AIElevator::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	/*TArray<UStaticMeshComponent*> Meshes;
-	GetComponents<UStaticMeshComponent>(Meshes);
-
-	for (UStaticMeshComponent* Mesh : Meshes)
-	{
-		if (Mesh->GetName() == TEXT("EvDoor1"))
-		{
-			door1 = Mesh;
-		}
-		else if (Mesh->GetName() == TEXT("EvDoor2"))
-		{
-			door2 = Mesh;
-		}
-	}
-
-	if (!door1 || !door2)
-	{
-		DEBUG_PRINT("%s : ドアが正常に参照できませんでした。", *GetName());
-	}*/
-
 	nextFloor = floor;
 }
 
@@ -81,13 +69,31 @@ void AIElevator::Tick(float DeltaTime)
 			{
 				Action();
 			}
-
+			isDoorAction = true;
+			beforeDoor1 = door1->GetRelativeLocation();
+			beforeDoor2 = door2->GetRelativeLocation();
+			actionRunningTime = 0.0f;
 			return;
 		}
 
 		FVector newLocation = FMath::Lerp(beforeLocation, targetLocation, ratio);
 
 		SetActorLocation(newLocation);
+	}
+	if (isDoorAction) 
+	{
+		float elapsedRaito = actionRunningTime / moveTime;
+		float ratio = moveCurve->GetFloatValue(elapsedRaito);
+
+		//ドアの操作
+		FVector doorTargetLocation = beforeDoor1;
+		doorTargetLocation.X = doorMovePos;
+
+		FVector newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
+		FVector newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
+		
+		//door1->SetRelativeLocation(newDoor1);
+		//door2->SetRelativeLocation(newDoor2);
 	}
 }
 
@@ -108,8 +114,6 @@ void AIElevator::Action()
 	}
 
 	beforeLocation = GetActorLocation();
-	/*beforeDoor1 = door1->GetRelativeLocation();
-	beforeDoor2 = door2->GetRelativeLocation();*/
 	actionRunningTime = 0.0f;
 	isAction = true;
 }
@@ -128,20 +132,3 @@ bool AIElevator::MoveSet(int next)
 
 	return canMove;
 }
-
-void AIElevator::DoorAction()
-{
-	//float elapsedRaito = actionRunningTime / moveTime;
-	//float ratio = moveCurve->GetFloatValue(elapsedRaito);
-
-	////ドアの操作
-	//FVector doorTargetLocation = beforeDoor1;
-	//doorTargetLocation.X = doorMovePos;
-
-	//FVector newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
-	//FVector newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
-
-	//SetRelativeLocation(newDoor1);
-	//SetRelativeLocation(newDoor2);
-}
-
