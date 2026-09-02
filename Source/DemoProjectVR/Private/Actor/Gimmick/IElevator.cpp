@@ -25,6 +25,10 @@ void AIElevator::BeginPlay()
 	Super::BeginPlay();
 	
 	nextFloor = floor;
+	
+	//ドアの操作
+	beforeDoor1 = door1->GetComponentLocation();
+	beforeDoor2 = door2->GetComponentLocation();
 }
 
 // Called every frame
@@ -50,7 +54,7 @@ void AIElevator::Tick(float DeltaTime)
 		float elapsedRaito = actionRunningTime / moveTime;
 		float ratio = moveCurve->GetFloatValue(elapsedRaito);
 
-		bool isCompleted = elapsedRaito > 2.0f;
+		bool isCompleted = elapsedRaito > 1.0f;
 		if (isCompleted)
 		{
 			if (isMoveUp) 
@@ -71,12 +75,7 @@ void AIElevator::Tick(float DeltaTime)
 			}
 			else 
 			{
-				isDoorAction = true;
-				beforeDoor1 = door1->GetRelativeLocation();
-				beforeDoor2 = door2->GetRelativeLocation();
-				actionRunningTime = 0.0f;
-
-				DEBUG_PRINT("%s : Door Opening\nDoor1 Start : %lf , %lf, %lf\nDoor2 Start : %lf, %lf, %lf", *GetName(), beforeDoor1.X, beforeDoor1.Y, beforeDoor1.Z, beforeDoor2.X, beforeDoor2.Y, beforeDoor2.Z);
+				StartDoorAction();
 			}
 			return;
 		}
@@ -87,20 +86,45 @@ void AIElevator::Tick(float DeltaTime)
 	}
 	if (isDoorAction) 
 	{
-		DEBUG_PRINT("%s : DoorAction Started", *GetName());
-
 		float elapsedRaito = actionRunningTime / moveTime;
 		float ratio = moveCurve->GetFloatValue(elapsedRaito);
 
-		//ドアの操作
-		FVector doorTargetLocation = beforeDoor1;
-		doorTargetLocation.X = doorMovePos;
+		bool isComp = ratio >= 1.0f;
+		if (!isComp)
+		{
+			FVector newDoor1 = FVector::Zero();
+			FVector newDoor2 = FVector::Zero();
 
-		FVector newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
-		FVector newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
-		
-		door1->SetWorldLocation(newDoor1);
-		door2->SetWorldLocation(newDoor2);
+			if (!isOpen)
+			{
+				newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
+				newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
+			}
+			else
+			{
+				newDoor1 = FMath::Lerp(doorTargetLocation, beforeDoor1, ratio);
+				newDoor2 = FMath::Lerp(doorTargetLocation, beforeDoor2, ratio);
+			}
+
+			door1->SetWorldLocation(newDoor1);
+			door2->SetWorldLocation(newDoor2);
+		}
+		else
+		{
+			DEBUG_PRINT("%s : DoorAction Complete", *GetName());
+			if(isOpen)
+			{
+				isOpen = false;
+				isAction = true;
+				DEBUG_PRINT("%s : ドアが閉まりました。", *GetName());
+			}
+			else 
+			{
+				isOpen = true;
+				DEBUG_PRINT("%s : ドアが開きました。", *GetName());
+			}
+			isDoorAction = false;
+		}
 	}
 }
 
@@ -122,7 +146,15 @@ void AIElevator::Action()
 
 	beforeLocation = GetActorLocation();
 	actionRunningTime = 0.0f;
-	isAction = true;
+
+	if (isOpen)
+	{
+		StartDoorAction();
+	}
+	else
+	{
+		isAction = true;
+	}
 }
 
 bool AIElevator::MoveSet(int next)
@@ -138,4 +170,16 @@ bool AIElevator::MoveSet(int next)
 	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
 
 	return canMove;
+}
+
+void AIElevator::StartDoorAction()
+{
+	FVector door = door1->GetComponentLocation();
+	doorTargetLocation = beforeDoor1;
+	doorTargetLocation.Z = door.Z;
+	doorTargetLocation.X += doorMovePos;
+	beforeDoor1.Z = door.Z;
+	beforeDoor2.Z = door.Z;
+	isDoorAction = true;
+	actionRunningTime = 0.0f;
 }

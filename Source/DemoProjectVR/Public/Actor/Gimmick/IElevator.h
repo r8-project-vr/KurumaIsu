@@ -28,6 +28,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	bool MoveSet(int next);
 
+	UFUNCTION(BlueprintCallable)
+	void StartDoorAction();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	UCurveFloat* moveCurve;
 	
@@ -47,14 +50,16 @@ protected:
 	TObjectPtr<UStaticMeshComponent> door2;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	float doorMovePos = 33.33f;
+	float doorMovePos = -94.0f;
 private:
 	FVector beforeLocation = FVector::Zero();
 	FVector beforeDoor1 = FVector::Zero();
 	FVector beforeDoor2 = FVector::Zero();
+	FVector doorTargetLocation = FVector::Zero();
 
 	bool isAction = false;
 	bool isDoorAction = false;
+	bool isOpen = false;
 	float actionRunningTime = 0.0f;
 
 	// 移動先の階数
