@@ -69,10 +69,15 @@ void AIElevator::Tick(float DeltaTime)
 			{
 				Action();
 			}
-			isDoorAction = true;
-			beforeDoor1 = door1->GetRelativeLocation();
-			beforeDoor2 = door2->GetRelativeLocation();
-			actionRunningTime = 0.0f;
+			else 
+			{
+				isDoorAction = true;
+				beforeDoor1 = door1->GetRelativeLocation();
+				beforeDoor2 = door2->GetRelativeLocation();
+				actionRunningTime = 0.0f;
+
+				DEBUG_PRINT("%s : Door Opening\nDoor1 Start : %lf , %lf, %lf\nDoor2 Start : %lf, %lf, %lf", *GetName(), beforeDoor1.X, beforeDoor1.Y, beforeDoor1.Z, beforeDoor2.X, beforeDoor2.Y, beforeDoor2.Z);
+			}
 			return;
 		}
 
@@ -82,6 +87,8 @@ void AIElevator::Tick(float DeltaTime)
 	}
 	if (isDoorAction) 
 	{
+		DEBUG_PRINT("%s : DoorAction Started", *GetName());
+
 		float elapsedRaito = actionRunningTime / moveTime;
 		float ratio = moveCurve->GetFloatValue(elapsedRaito);
 
@@ -92,8 +99,8 @@ void AIElevator::Tick(float DeltaTime)
 		FVector newDoor1 = FMath::Lerp(beforeDoor1, doorTargetLocation, ratio);
 		FVector newDoor2 = FMath::Lerp(beforeDoor2, doorTargetLocation, ratio);
 		
-		//door1->SetRelativeLocation(newDoor1);
-		//door2->SetRelativeLocation(newDoor2);
+		door1->SetWorldLocation(newDoor1);
+		door2->SetWorldLocation(newDoor2);
 	}
 }
 
