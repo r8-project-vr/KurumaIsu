@@ -29,7 +29,8 @@ void UNuiInteractionPromptWidget::BuildPrompt(
 		Background = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), TEXT("Background"));
 		PromptText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("PromptText"));
 
-		Background->SetPadding(FMargin(14.0f, 7.0f));
+		//　パネルサイズ
+		Background->SetPadding(FMargin(6.0f, 3.0f));
 		Background->SetContent(PromptText);
 		WidgetTree->RootWidget = Background;
 	}
@@ -59,15 +60,19 @@ ANuigurumi::ANuigurumi()
 
 	InteractionPromptWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("InteractionPromptWidget"));
 	InteractionPromptWidget->SetupAttachment(Collider);
-	InteractionPromptWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	InteractionPromptWidget->SetWidgetSpace(EWidgetSpace::World);
 	InteractionPromptWidget->SetDrawAtDesiredSize(true);
+	InteractionPromptWidget->SetTwoSided(true);
+	InteractionPromptWidget->SetPivot(FVector2D(0.5f, 0.5f));
+	InteractionPromptWidget->SetRelativeScale3D(FVector(0.75f));
 	InteractionPromptWidget->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	InteractionPromptWidget->SetVisibility(false);
 	InteractionPromptWidget->SetWidgetClass(UNuiInteractionPromptWidget::StaticClass());
 
 	InteractionPromptText = FText::GetEmpty();
 	InteractionPromptWidgetClass = UNuiInteractionPromptWidget::StaticClass();
-	InteractionPromptFont = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 24);
+	// フォントサイズ
+	InteractionPromptFont = FCoreStyle::GetDefaultFontStyle(TEXT("Regular"), 13);
 }
 
 // Called when the game starts or when spawned
@@ -113,6 +118,12 @@ void ANuigurumi::Tick(float DeltaTime)
 			+ InteractionPromptOffset
 			+ FVector(0.0f, 0.0f, TargetExtent.Z);
 		InteractionPromptWidget->SetWorldLocation(PromptLocation);
+
+		const FVector ToCamera = PlayerController->PlayerCameraManager->GetCameraLocation() - PromptLocation;
+		if (ToCamera.IsNearlyZero() == false)
+		{
+			InteractionPromptWidget->SetWorldRotation(ToCamera.Rotation());
+		}
 	}
 
 	if (bFollowPlayerView == false)
