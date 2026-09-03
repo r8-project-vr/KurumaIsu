@@ -69,6 +69,9 @@ void AIElevator::Tick(float DeltaTime)
 			isAction = false;
 
 			bool isMoveComplete = floor == nextFloor;
+
+			DEBUG_PRINT("%s : 現在 %d 階 / 目的地 %d 階", *GetName(), floor, nextFloor);
+
 			if (!isMoveComplete)
 			{
 				Action();
@@ -111,17 +114,15 @@ void AIElevator::Tick(float DeltaTime)
 		}
 		else
 		{
-			DEBUG_PRINT("%s : DoorAction Complete", *GetName());
 			if(isOpen)
 			{
 				isOpen = false;
 				isAction = true;
-				DEBUG_PRINT("%s : ドアが閉まりました。", *GetName());
+				actionRunningTime = 0.0f;
 			}
 			else 
 			{
 				isOpen = true;
-				DEBUG_PRINT("%s : ドアが開きました。", *GetName());
 			}
 			isDoorAction = false;
 		}
