@@ -72,6 +72,8 @@ bool ADeviceIMUReader::ConnectDevice()
 	}
 	SerialPort->clear();
 	ReceiveBuffer.Reset();
+	bHasDeviceOrientation = false;
+	bHasDeviceQuaternion = false;
 	UE_LOG(LogDeviceIMUReader, Display, TEXT("Connected to IMU device on COM%d at %d baud."), ComPort, BaudRate);
 	return true;
 #else
@@ -201,6 +203,24 @@ bool ADeviceIMUReader::ParseIMULine(const FString& Line)
 	FRegexMatcher Matcher(NumberPattern, Line);
 	TArray<double> Values;
 	while (Matcher.FindNext()) { Values.Add(FCString::Atod(*Matcher.GetCaptureGroup(0))); }
+	if (Line.StartsWith(TEXT("QUAT,"), ESearchCase::IgnoreCase) && Values.Num() == 7)
+	{
+		// Firmware order is W, X, Y, Z, Gyro X, Gyro Y, Gyro Z.
+		FQuat ParsedOrientation(Values[1], Values[2], Values[3], Values[0]);
+		if (ParsedOrientation.ContainsNaN() || ParsedOrientation.SizeSquared() <= UE_SMALL_NUMBER)
+		{
+			return false;
+		}
+
+		ParsedOrientation.Normalize();
+		DeviceOrientationQuaternion = ParsedOrientation;
+		DeviceOrientation = ParsedOrientation.Rotator().GetNormalized();
+		Gyroscope = FVector(Values[4], Values[5], Values[6]);
+		bHasDeviceQuaternion = true;
+		bHasDeviceOrientation = true;
+		++ParsedSampleCount;
+		return true;
+	}
 	if (Line.StartsWith(TEXT("ORI,"), ESearchCase::IgnoreCase) && Values.Num() == 6)
 	{
 		// Firmware order is Roll, Pitch, Yaw, Gyro X, Gyro Y, Gyro Z.

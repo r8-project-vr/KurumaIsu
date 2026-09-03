@@ -68,6 +68,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
 	FRotator DeviceOrientation = FRotator::ZeroRotator;
 
+	/** Raw fused orientation from a QUAT,W,X,Y,Z packet. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
+	FQuat DeviceOrientationQuaternion = FQuat::Identity;
+
+	/** True after receiving the quaternion protocol; false for legacy ORI-only firmware. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
+	bool bHasDeviceQuaternion = false;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
 	bool bHasDeviceOrientation = false;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")

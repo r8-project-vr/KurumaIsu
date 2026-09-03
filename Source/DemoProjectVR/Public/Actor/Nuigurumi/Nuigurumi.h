@@ -45,6 +45,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	/** Captures the current physical device pose as the new forward/neutral pose. */
+	UFUNCTION(BlueprintCallable, Category = "Device|IMU")
+	void RecenterIMU();
+
 protected:
 	// プレイヤーの視点前方にぬいぐるみを追従させます
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Follow")
@@ -64,6 +68,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU")
 	bool bUseIMUTiltControl = false;
 
+	/** Mirrors the physical doll's rotation one-to-one, bypassing tilt scaling, clamping, dead zone, and interpolation. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU")
+	bool bMirrorPhysicalPoseOneToOne = true;
+
+	/** Legacy tuned-control settings used only when one-to-one mirroring is disabled. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0", ClampMax = "3.0"))
 	float IMUTiltSensitivity = 0.5f;
 
@@ -72,6 +81,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.1"))
 	float IMURotationInterpSpeed = 3.0f;
+
+	/** Pitch/Yaw/Roll multipliers after converting the sensor to Unreal coordinates. Use -1 to invert an axis. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU")
+	FRotator IMURotationAxisScale = FRotator(1.0f, 1.0f, 1.0f);
+
+	/** Ignores tiny absolute-angle changes without blocking slow deliberate movement. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0", ClampMax = "5.0"))
+	float IMUAngleDeadZone = 0.35f;
 
 	/** Unreal units (cm) moved per 1 g of acceleration change. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0"))
@@ -92,11 +109,7 @@ protected:
 
 	/** Keep the physical model still for this long after Play to establish its neutral pose. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.2", ClampMax = "5.0"))
-	float IMUCalibrationDuration = 1.0f;
-
-	/** Only physical rotations faster than this update the held pose. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0"))
-	float IMUMotionThreshold = 8.0f;
+	float IMUCalibrationDuration = 2.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
 	FText InteractionPromptText;
@@ -131,8 +144,8 @@ private:
 	ADeviceIMUReader* IMUReader = nullptr;
 
 	FQuat IMUReferenceOrientation = FQuat::Identity;
-	FRotator CurrentIMUOffset = FRotator::ZeroRotator;
-	FRotator HeldIMUTarget = FRotator::ZeroRotator;
+	FQuat CurrentIMUOffset = FQuat::Identity;
+	FQuat TargetIMUOffset = FQuat::Identity;
 	FVector CurrentIMULocationOffset = FVector::ZeroVector;
 	float IMUCalibrationElapsed = 0.0f;
 	bool bHasIMUReference = false;
