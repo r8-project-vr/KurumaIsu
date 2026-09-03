@@ -13,7 +13,10 @@ public class DemoProjectVR : ModuleRules
 
         // Windowsだけ
         if (Target.Platform == UnrealTargetPlatform.Win64)
+        {
             PublicDependencyModuleNames.AddRange(new string[] { "ASerialCom" });
+            PublicSystemLibraries.Add("setupapi.lib");
+        }
         // Androidだけ
         else if (Target.Platform == UnrealTargetPlatform.Android)
             PublicDependencyModuleNames.AddRange(new string[] { });

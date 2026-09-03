@@ -7,6 +7,8 @@
 #include "GameFramework/Actor.h"
 #include "Nuigurumi.generated.h"
 
+class ADeviceIMUReader;
+
 UCLASS(Blueprintable)
 class DEMOPROJECTVR_API UNuiInteractionPromptWidget : public UUserWidget
 {
@@ -58,6 +60,44 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Follow")
 	bool bMatchPlayerViewRotation = true;
 
+	/** Test-only IMU tilt control. Enabled only on the NuiTest level instance. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU")
+	bool bUseIMUTiltControl = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0", ClampMax = "3.0"))
+	float IMUTiltSensitivity = 0.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0", ClampMax = "90.0"))
+	float MaxIMUTiltDegrees = 20.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.1"))
+	float IMURotationInterpSpeed = 3.0f;
+
+	/** Unreal units (cm) moved per 1 g of acceleration change. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0"))
+	float IMUMovementScale = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0"))
+	float MaxIMUMovementDistance = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.1"))
+	float IMUMovementInterpSpeed = 3.0f;
+
+	/** Axis signs and remapping can be tuned per level. Defaults reverse the horizontal sensor axes. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU")
+	FVector IMUMovementAxisScale = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU")
+	bool bShowIMUDebug = true;
+
+	/** Keep the physical model still for this long after Play to establish its neutral pose. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.2", ClampMax = "5.0"))
+	float IMUCalibrationDuration = 1.0f;
+
+	/** Only physical rotations faster than this update the held pose. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.0"))
+	float IMUMotionThreshold = 8.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
 	FText InteractionPromptText;
 
@@ -86,4 +126,16 @@ private:
 
 	UPROPERTY()
 	AActor* InteractionPromptTarget = nullptr;
+
+	UPROPERTY()
+	ADeviceIMUReader* IMUReader = nullptr;
+
+	FQuat IMUReferenceOrientation = FQuat::Identity;
+	FRotator CurrentIMUOffset = FRotator::ZeroRotator;
+	FRotator HeldIMUTarget = FRotator::ZeroRotator;
+	FVector CurrentIMULocationOffset = FVector::ZeroVector;
+	float IMUCalibrationElapsed = 0.0f;
+	bool bHasIMUReference = false;
+
+	void UpdateIMUTransform(float DeltaTime, const FVector& BaseLocation, const FRotator& BaseRotation);
 };

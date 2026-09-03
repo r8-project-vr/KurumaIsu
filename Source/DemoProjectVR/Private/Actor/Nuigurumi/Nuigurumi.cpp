@@ -3,6 +3,7 @@
 #include "Actor/Nuigurumi/Nuigurumi.h"
 
 #include "Actor/Nuigurumi/NuiEyeSightComponent.h"
+#include "Device/DeviceIMUReader.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/Border.h"
 #include "Components/SphereComponent.h"
@@ -10,6 +11,7 @@
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Styling/CoreStyle.h"
+#include "EngineUtils.h"
 
 void UNuiInteractionPromptWidget::BuildPrompt(
 	const FText& Text,
@@ -128,6 +130,7 @@ void ANuigurumi::Tick(float DeltaTime)
 
 	if (bFollowPlayerView == false)
 	{
+		UpdateIMUTransform(DeltaTime, GetActorLocation() - CurrentIMULocationOffset, GetActorRotation() - CurrentIMUOffset);
 		return;
 	}
 
@@ -146,12 +149,96 @@ void ANuigurumi::Tick(float DeltaTime)
 		+ (CameraMatrix.GetScaledAxis(EAxis::Z) * (PlayerViewOffset.Z - 30.0f));
 
 	const FVector NewLocation = FMath::VInterpTo(GetActorLocation(), TargetLocation, DeltaTime, FollowInterpSpeed);
-	SetActorLocation(NewLocation);
-
 	if (bMatchPlayerViewRotation)
 	{
-		const FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), CameraRotation, DeltaTime, FollowInterpSpeed);
-		SetActorRotation(NewRotation);
+		if (bUseIMUTiltControl)
+		{
+			// Keep the camera as the stable base. Interpolating the combined actor rotation
+			// toward the camera would gradually erase the held IMU pose every frame.
+			UpdateIMUTransform(DeltaTime, NewLocation, CameraRotation);
+		}
+		else
+		{
+			const FRotator NewRotation = FMath::RInterpTo(GetActorRotation(), CameraRotation, DeltaTime, FollowInterpSpeed);
+			UpdateIMUTransform(DeltaTime, NewLocation, NewRotation);
+		}
+	}
+	else
+	{
+		UpdateIMUTransform(DeltaTime, NewLocation, GetActorRotation() - CurrentIMUOffset);
+	}
+}
+
+void ANuigurumi::UpdateIMUTransform(float DeltaTime, const FVector& BaseLocation, const FRotator& BaseRotation)
+{
+	if (!bUseIMUTiltControl)
+	{
+		CurrentIMUOffset = FRotator::ZeroRotator;
+		CurrentIMULocationOffset = FVector::ZeroVector;
+		SetActorLocation(BaseLocation);
+		SetActorRotation(BaseRotation);
+		return;
+	}
+
+	if (!IsValid(IMUReader))
+	{
+		for (TActorIterator<ADeviceIMUReader> It(GetWorld()); It; ++It)
+		{
+			IMUReader = *It;
+			break;
+		}
+	}
+
+	if (!IsValid(IMUReader) || !IMUReader->bHasDeviceOrientation)
+	{
+		return;
+	}
+
+	if (!bHasIMUReference)
+	{
+		IMUCalibrationElapsed += DeltaTime;
+		if (IMUCalibrationElapsed >= IMUCalibrationDuration)
+		{
+			IMUReferenceOrientation = IMUReader->DeviceOrientation.Quaternion();
+			bHasIMUReference = true;
+		}
+	}
+	if (!bHasIMUReference)
+	{
+		if (bShowIMUDebug && GEngine != nullptr)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				static_cast<uint64>(reinterpret_cast<UPTRINT>(this)) + 1, 0.0f, FColor::Yellow,
+				FString::Printf(TEXT("Nuigurumi IMU calibrating... %.1f / %.1f sec"), IMUCalibrationElapsed, IMUCalibrationDuration));
+		}
+		return;
+	}
+
+	const FQuat CurrentOrientation = IMUReader->DeviceOrientation.Quaternion();
+	const FRotator RelativeOrientation = (CurrentOrientation * IMUReferenceOrientation.Inverse()).Rotator().GetNormalized();
+	const FRotator MeasuredOffset(
+		FMath::Clamp(RelativeOrientation.Pitch * IMUTiltSensitivity, -MaxIMUTiltDegrees, MaxIMUTiltDegrees),
+		FMath::Clamp(-RelativeOrientation.Yaw * IMUTiltSensitivity, -MaxIMUTiltDegrees, MaxIMUTiltDegrees),
+		FMath::Clamp(-RelativeOrientation.Roll * IMUTiltSensitivity, -MaxIMUTiltDegrees, MaxIMUTiltDegrees));
+	if (IMUReader->Gyroscope.Size() >= IMUMotionThreshold)
+	{
+		HeldIMUTarget = MeasuredOffset;
+	}
+
+	CurrentIMUOffset = FMath::RInterpTo(CurrentIMUOffset, HeldIMUTarget, DeltaTime, IMURotationInterpSpeed);
+	CurrentIMULocationOffset = FVector::ZeroVector;
+	SetActorLocation(BaseLocation);
+	SetActorRotation(BaseRotation + CurrentIMUOffset);
+
+	if (bShowIMUDebug && GEngine != nullptr)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			static_cast<uint64>(reinterpret_cast<UPTRINT>(this)) + 1,
+			0.0f,
+			FColor::Yellow,
+			FString::Printf(
+				TEXT("Nuigurumi Pose  Pitch %.1f  Yaw %.1f  Roll %.1f"),
+				CurrentIMUOffset.Pitch, CurrentIMUOffset.Yaw, CurrentIMUOffset.Roll));
 	}
 }
 
