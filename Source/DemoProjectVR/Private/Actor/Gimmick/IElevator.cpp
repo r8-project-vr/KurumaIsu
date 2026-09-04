@@ -117,8 +117,16 @@ void AIElevator::Tick(float DeltaTime)
 			if(isOpen)
 			{
 				isOpen = false;
-				isAction = true;
-				actionRunningTime = 0.0f;
+
+				if (isDoorOpenOnly)
+				{
+					isAction = true;
+					actionRunningTime = 0.0f;
+				}
+				else
+				{
+					isDoorOpenOnly = false;
+				}
 			}
 			else 
 			{
@@ -141,6 +149,12 @@ void AIElevator::Action()
 	bool canMove = floor != nextFloor;
 	if (!canMove) 
 	{
+		if (!isOpen)
+		{
+			isDoorOpenOnly = true;
+			StartDoorAction();
+		}
+
 		DEBUG_PRINT("%s : Action中断 / 移動先の未指定により", *GetName());
 		return;
 	}

@@ -60,6 +60,7 @@ private:
 	bool isAction = false;
 	bool isDoorAction = false;
 	bool isOpen = false;
+	bool isDoorOpenOnly = false;
 	float actionRunningTime = 0.0f;
 
 	// 移動先の階数
