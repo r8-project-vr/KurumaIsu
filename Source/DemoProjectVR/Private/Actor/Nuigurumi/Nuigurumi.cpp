@@ -9,9 +9,14 @@
 #include "Components/SphereComponent.h"
 #include "Components/TextBlock.h"
 #include "Components/WidgetComponent.h"
+#include "Components/MeshComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Styling/CoreStyle.h"
 #include "EngineUtils.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
+#include "UObject/ConstructorHelpers.h"
 
 
 namespace
@@ -265,6 +270,14 @@ ANuigurumi::ANuigurumi()
 	InteractionPromptWidgetClass =
 		UNuiInteractionPromptWidget::StaticClass();
 
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> InnerGlowMaterialFinder(
+		TEXT("/Game/Characters/Nuigurumi/M_NuiInnerRimStable.M_NuiInnerRimStable"));
+
+	if (InnerGlowMaterialFinder.Succeeded())
+	{
+		DetectedObjectInnerGlowMaterial = InnerGlowMaterialFinder.Object;
+	}
+
 	// フォントサイズ
 	InteractionPromptFont =
 		FCoreStyle::GetDefaultFontStyle(
@@ -324,6 +337,28 @@ void ANuigurumi::BeginPlay()
 				this,
 				&ANuigurumi::HandleGimmickFocusChanged);
 	}
+
+	if (DetectedObjectInnerGlowMaterial)
+	{
+		DetectedObjectInnerGlowInstance =
+			UMaterialInstanceDynamic::Create(
+				DetectedObjectInnerGlowMaterial,
+				this);
+
+		DetectedObjectInnerGlowInstance->SetVectorParameterValue(
+			TEXT("RimColor"),
+			DetectedObjectRimLightColor *
+			DetectedObjectInnerGlowIntensity);
+	}
+}
+
+
+
+void ANuigurumi::EndPlay(
+	const EEndPlayReason::Type EndPlayReason)
+{
+	ClearDetectedObjectRimLight();
+	Super::EndPlay(EndPlayReason);
 }
 
 
@@ -840,8 +875,17 @@ void ANuigurumi::UpdateIMUTransform(
 void ANuigurumi::HandleDetectedActorChanged(
 	AActor* NewActor)
 {
+	ClearDetectedObjectRimLight();
+
 	InteractionPromptTarget =
 		NewActor;
+
+	if (bUseDetectedObjectRimLight &&
+		IsValid(InteractionPromptTarget))
+	{
+		ApplyDetectedObjectRimLight(
+			InteractionPromptTarget);
+	}
 
 
 	if (!IsValid(
@@ -863,4 +907,120 @@ void ANuigurumi::HandleGimmickFocusChanged(
 			bCanAction &&
 			IsValid(
 				InteractionPromptTarget));
+}
+
+
+
+void ANuigurumi::ApplyDetectedObjectRimLight(
+	AActor* TargetActor)
+{
+	if (!IsValid(TargetActor) ||
+		!IsValid(DetectedObjectInnerGlowInstance))
+	{
+		return;
+	}
+
+	TInlineComponentArray<UMeshComponent*> SourceMeshes;
+	TargetActor->GetComponents(SourceMeshes);
+
+	for (UMeshComponent* SourceMesh : SourceMeshes)
+	{
+		if (!IsValid(SourceMesh) ||
+			!SourceMesh->IsVisible())
+		{
+			continue;
+		}
+
+		if (UStaticMeshComponent* SourceStaticMesh =
+			Cast<UStaticMeshComponent>(SourceMesh))
+		{
+			if (!SourceStaticMesh->GetStaticMesh())
+			{
+				continue;
+			}
+
+			UStaticMeshComponent* InnerGlowMesh =
+				NewObject<UStaticMeshComponent>(
+					TargetActor);
+
+			InnerGlowMesh->SetStaticMesh(
+				SourceStaticMesh->GetStaticMesh());
+
+			InnerGlowMesh->SetMobility(
+				SourceMesh->Mobility);
+
+			InnerGlowMesh->SetupAttachment(
+				SourceMesh);
+
+			const FBoxSphereBounds LocalBounds =
+				SourceMesh->CalcBounds(
+					FTransform::Identity);
+
+			const float MaxExtent =
+				FMath::Max(
+					LocalBounds.BoxExtent.GetMax(),
+					1.0f);
+
+			const float InnerGlowScale =
+				1.0f + (0.15f / MaxExtent);
+
+			InnerGlowMesh->SetRelativeLocation(
+				-LocalBounds.Origin *
+				(InnerGlowScale - 1.0f));
+
+			InnerGlowMesh->SetRelativeRotation(
+				FRotator::ZeroRotator);
+
+			InnerGlowMesh->SetRelativeScale3D(
+				FVector(InnerGlowScale));
+
+			InnerGlowMesh->SetCollisionEnabled(
+				ECollisionEnabled::NoCollision);
+
+			InnerGlowMesh->SetGenerateOverlapEvents(false);
+			InnerGlowMesh->SetCastShadow(false);
+			InnerGlowMesh->SetReceivesDecals(false);
+			InnerGlowMesh->SetCanEverAffectNavigation(false);
+			InnerGlowMesh->SetTranslucentSortPriority(1);
+
+			const int32 MaterialCount =
+				FMath::Max(
+					SourceMesh->GetNumMaterials(),
+					1);
+
+			for (int32 MaterialIndex = 0;
+				MaterialIndex < MaterialCount;
+				++MaterialIndex)
+			{
+				InnerGlowMesh->SetMaterial(
+					MaterialIndex,
+					DetectedObjectInnerGlowInstance);
+			}
+
+			TargetActor->AddInstanceComponent(
+				InnerGlowMesh);
+
+			InnerGlowMesh->RegisterComponent();
+
+			FNuiRimLightMeshState& InnerGlowState =
+				RimLightMeshStates.AddDefaulted_GetRef();
+
+			InnerGlowState.RimLightMesh = InnerGlowMesh;
+		}
+	}
+}
+
+
+
+void ANuigurumi::ClearDetectedObjectRimLight()
+{
+	for (const FNuiRimLightMeshState& State : RimLightMeshStates)
+	{
+		if (UMeshComponent* RimMesh = State.RimLightMesh.Get())
+		{
+			RimMesh->DestroyComponent();
+		}
+	}
+
+	RimLightMeshStates.Reset();
 }

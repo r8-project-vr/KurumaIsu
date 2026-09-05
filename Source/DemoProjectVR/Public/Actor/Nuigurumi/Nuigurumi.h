@@ -8,6 +8,18 @@
 #include "Nuigurumi.generated.h"
 
 class ADeviceIMUReader;
+class UMaterialInstanceDynamic;
+class UMaterialInterface;
+class UMeshComponent;
+
+USTRUCT()
+struct FNuiRimLightMeshState
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TWeakObjectPtr<UMeshComponent> RimLightMesh;
+};
 
 UCLASS(Blueprintable)
 class DEMOPROJECTVR_API UNuiInteractionPromptWidget : public UUserWidget
@@ -34,6 +46,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION()
 	void HandleDetectedActorChanged(AActor* NewActor);
@@ -129,6 +142,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
 	FLinearColor InteractionPromptBackgroundColor = FLinearColor(0.02f, 0.02f, 0.02f, 0.75f);
 
+	/** Applies an inward-fading rim glow only to the object currently found by NuiEyeSightComponent. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction Rim Light")
+	bool bUseDetectedObjectRimLight = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction Rim Light")
+	TObjectPtr<UMaterialInterface> DetectedObjectInnerGlowMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction Rim Light")
+	FLinearColor DetectedObjectRimLightColor = FLinearColor(0.08f, 0.65f, 1.0f, 1.0f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction Rim Light", meta = (ClampMin = "0.0", DisplayName = "Rim Glow Intensity"))
+	float DetectedObjectInnerGlowIntensity = 2.8f;
+
 private:
 	// 基本Component
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
@@ -143,6 +169,12 @@ private:
 	UPROPERTY()
 	ADeviceIMUReader* IMUReader = nullptr;
 
+	UPROPERTY()
+	UMaterialInstanceDynamic* DetectedObjectInnerGlowInstance = nullptr;
+
+	UPROPERTY()
+	TArray<FNuiRimLightMeshState> RimLightMeshStates;
+
 	FQuat IMUReferenceOrientation = FQuat::Identity;
 	FQuat CurrentIMUOffset = FQuat::Identity;
 	FQuat TargetIMUOffset = FQuat::Identity;
@@ -151,4 +183,6 @@ private:
 	bool bHasIMUReference = false;
 
 	void UpdateIMUTransform(float DeltaTime, const FVector& BaseLocation, const FRotator& BaseRotation);
+	void ApplyDetectedObjectRimLight(AActor* TargetActor);
+	void ClearDetectedObjectRimLight();
 };
