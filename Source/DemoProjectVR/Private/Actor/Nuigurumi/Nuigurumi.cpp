@@ -4,15 +4,10 @@
 
 #include "Actor/Nuigurumi/NuiEyeSightComponent.h"
 #include "Device/DeviceIMUReader.h"
-#include "Blueprint/WidgetTree.h"
-#include "Components/Border.h"
 #include "Components/SphereComponent.h"
-#include "Components/TextBlock.h"
-#include "Components/WidgetComponent.h"
 #include "Components/MeshComponent.h"
-#include "Components/StaticMeshComponent.h"
+#include "Components/PostProcessComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Styling/CoreStyle.h"
 #include "EngineUtils.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
@@ -138,75 +133,6 @@ namespace
 
 
 
-void UNuiInteractionPromptWidget::BuildPrompt(
-	const FText& Text,
-	const FSlateFontInfo& Font,
-	const FLinearColor& TextColor,
-	const FLinearColor& BackgroundColor)
-{
-	UBorder* Background = WidgetTree
-		? Cast<UBorder>(
-			WidgetTree->FindWidget(
-				TEXT("Background")))
-		: nullptr;
-
-	UTextBlock* PromptText = WidgetTree
-		? Cast<UTextBlock>(
-			WidgetTree->FindWidget(
-				TEXT("PromptText")))
-		: nullptr;
-
-
-	if (WidgetTree &&
-		WidgetTree->RootWidget == nullptr)
-	{
-		Background =
-			WidgetTree->ConstructWidget<UBorder>(
-				UBorder::StaticClass(),
-				TEXT("Background"));
-
-		PromptText =
-			WidgetTree->ConstructWidget<UTextBlock>(
-				UTextBlock::StaticClass(),
-				TEXT("PromptText"));
-
-		// パネルサイズ
-		Background->SetPadding(
-			FMargin(6.0f, 3.0f));
-
-		Background->SetContent(
-			PromptText);
-
-		WidgetTree->RootWidget =
-			Background;
-	}
-
-
-	if (PromptText)
-	{
-		PromptText->SetText(
-			Text);
-
-		PromptText->SetFont(
-			Font);
-
-		PromptText->SetColorAndOpacity(
-			FSlateColor(TextColor));
-
-		PromptText->SetJustification(
-			ETextJustify::Center);
-	}
-
-
-	if (Background)
-	{
-		Background->SetBrushColor(
-			BackgroundColor);
-	}
-}
-
-
-
 // Sets default values
 ANuigurumi::ANuigurumi()
 {
@@ -221,68 +147,20 @@ ANuigurumi::ANuigurumi()
 		Collider;
 
 
-	InteractionPromptWidget =
-		CreateDefaultSubobject<UWidgetComponent>(
-			TEXT("InteractionPromptWidget"));
+	DetectedObjectPostProcess =
+		CreateDefaultSubobject<UPostProcessComponent>(
+			TEXT("DetectedObjectPostProcess"));
 
-	InteractionPromptWidget
-		->SetupAttachment(
-			Collider);
+	DetectedObjectPostProcess->bUnbound = true;
+	DetectedObjectPostProcess->BlendWeight = 1.0f;
 
-	InteractionPromptWidget
-		->SetWidgetSpace(
-			EWidgetSpace::World);
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> PostProcessMaterialFinder(
+		TEXT("/Game/Characters/Nuigurumi/PP_NuiInnerGlowScreenV2.PP_NuiInnerGlowScreenV2"));
 
-	InteractionPromptWidget
-		->SetDrawAtDesiredSize(
-			true);
-
-	InteractionPromptWidget
-		->SetTwoSided(
-			true);
-
-	InteractionPromptWidget
-		->SetPivot(
-			FVector2D(
-				0.5f,
-				0.5f));
-
-	InteractionPromptWidget
-		->SetRelativeScale3D(
-			FVector(0.75f));
-
-	InteractionPromptWidget
-		->SetCollisionEnabled(
-			ECollisionEnabled::NoCollision);
-
-	InteractionPromptWidget
-		->SetVisibility(
-			false);
-
-	InteractionPromptWidget
-		->SetWidgetClass(
-			UNuiInteractionPromptWidget::StaticClass());
-
-
-	InteractionPromptText =
-		FText::GetEmpty();
-
-	InteractionPromptWidgetClass =
-		UNuiInteractionPromptWidget::StaticClass();
-
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> InnerGlowMaterialFinder(
-		TEXT("/Game/Characters/Nuigurumi/M_NuiInnerRimStable.M_NuiInnerRimStable"));
-
-	if (InnerGlowMaterialFinder.Succeeded())
+	if (PostProcessMaterialFinder.Succeeded())
 	{
-		DetectedObjectInnerGlowMaterial = InnerGlowMaterialFinder.Object;
+		DetectedObjectPostProcessMaterial = PostProcessMaterialFinder.Object;
 	}
-
-	// フォントサイズ
-	InteractionPromptFont =
-		FCoreStyle::GetDefaultFontStyle(
-			TEXT("Regular"),
-			13);
 }
 
 
@@ -291,34 +169,6 @@ ANuigurumi::ANuigurumi()
 void ANuigurumi::BeginPlay()
 {
 	Super::BeginPlay();
-
-
-	UClass* PromptWidgetClass =
-		InteractionPromptWidgetClass
-		? InteractionPromptWidgetClass.Get()
-		: UNuiInteractionPromptWidget::StaticClass();
-
-
-	InteractionPromptWidget
-		->SetWidgetClass(
-			PromptWidgetClass);
-
-
-	InteractionPromptWidget
-		->InitWidget();
-
-
-	if (UNuiInteractionPromptWidget* PromptWidget =
-		Cast<UNuiInteractionPromptWidget>(
-			InteractionPromptWidget
-			->GetUserWidgetObject()))
-	{
-		PromptWidget->BuildPrompt(
-			InteractionPromptText,
-			InteractionPromptFont,
-			InteractionPromptTextColor,
-			InteractionPromptBackgroundColor);
-	}
 
 
 	if (UNuiEyeSightComponent* EyeSight =
@@ -330,25 +180,23 @@ void ANuigurumi::BeginPlay()
 			.AddDynamic(
 				this,
 				&ANuigurumi::HandleDetectedActorChanged);
-
-		EyeSight
-			->OnGimmickFocusChanged
-			.AddDynamic(
-				this,
-				&ANuigurumi::HandleGimmickFocusChanged);
 	}
 
-	if (DetectedObjectInnerGlowMaterial)
+	if (DetectedObjectPostProcessMaterial)
 	{
-		DetectedObjectInnerGlowInstance =
+		DetectedObjectPostProcessInstance =
 			UMaterialInstanceDynamic::Create(
-				DetectedObjectInnerGlowMaterial,
+				DetectedObjectPostProcessMaterial,
 				this);
 
-		DetectedObjectInnerGlowInstance->SetVectorParameterValue(
-			TEXT("RimColor"),
+		DetectedObjectPostProcessInstance->SetVectorParameterValue(
+			TEXT("GlowColor"),
 			DetectedObjectRimLightColor *
 			DetectedObjectInnerGlowIntensity);
+
+		DetectedObjectPostProcess->Settings.AddBlendable(
+			DetectedObjectPostProcessInstance,
+			1.0f);
 	}
 }
 
@@ -375,50 +223,6 @@ void ANuigurumi::Tick(
 		UGameplayStatics::GetPlayerController(
 			this,
 			0);
-
-
-	if (IsValid(InteractionPromptTarget) &&
-		PlayerController != nullptr &&
-		PlayerController->PlayerCameraManager != nullptr)
-	{
-		FVector TargetOrigin;
-		FVector TargetExtent;
-
-		InteractionPromptTarget
-			->GetActorBounds(
-				false,
-				TargetOrigin,
-				TargetExtent);
-
-
-		const FVector PromptLocation =
-			TargetOrigin
-			+ InteractionPromptOffset
-			+ FVector(
-				0.0f,
-				0.0f,
-				TargetExtent.Z);
-
-
-		InteractionPromptWidget
-			->SetWorldLocation(
-				PromptLocation);
-
-
-		const FVector ToCamera =
-			PlayerController
-			->PlayerCameraManager
-			->GetCameraLocation()
-			- PromptLocation;
-
-
-		if (!ToCamera.IsNearlyZero())
-		{
-			InteractionPromptWidget
-				->SetWorldRotation(
-					ToCamera.Rotation());
-		}
-	}
 
 
 	if (bFollowPlayerView == false)
@@ -877,36 +681,12 @@ void ANuigurumi::HandleDetectedActorChanged(
 {
 	ClearDetectedObjectRimLight();
 
-	InteractionPromptTarget =
-		NewActor;
-
 	if (bUseDetectedObjectRimLight &&
-		IsValid(InteractionPromptTarget))
+		IsValid(NewActor))
 	{
 		ApplyDetectedObjectRimLight(
-			InteractionPromptTarget);
+			NewActor);
 	}
-
-
-	if (!IsValid(
-		InteractionPromptTarget))
-	{
-		InteractionPromptWidget
-			->SetVisibility(
-				false);
-	}
-}
-
-
-
-void ANuigurumi::HandleGimmickFocusChanged(
-	bool bCanAction)
-{
-	InteractionPromptWidget
-		->SetVisibility(
-			bCanAction &&
-			IsValid(
-				InteractionPromptTarget));
 }
 
 
@@ -915,7 +695,7 @@ void ANuigurumi::ApplyDetectedObjectRimLight(
 	AActor* TargetActor)
 {
 	if (!IsValid(TargetActor) ||
-		!IsValid(DetectedObjectInnerGlowInstance))
+		!IsValid(DetectedObjectPostProcessInstance))
 	{
 		return;
 	}
@@ -931,82 +711,17 @@ void ANuigurumi::ApplyDetectedObjectRimLight(
 			continue;
 		}
 
-		if (UStaticMeshComponent* SourceStaticMesh =
-			Cast<UStaticMeshComponent>(SourceMesh))
-		{
-			if (!SourceStaticMesh->GetStaticMesh())
-			{
-				continue;
-			}
+		FNuiRimLightMeshState& State =
+			RimLightMeshStates.AddDefaulted_GetRef();
 
-			UStaticMeshComponent* InnerGlowMesh =
-				NewObject<UStaticMeshComponent>(
-					TargetActor);
+		State.HighlightedMesh = SourceMesh;
+		State.bPreviousRenderCustomDepth =
+			SourceMesh->bRenderCustomDepth;
+		State.PreviousCustomDepthStencilValue =
+			SourceMesh->CustomDepthStencilValue;
 
-			InnerGlowMesh->SetStaticMesh(
-				SourceStaticMesh->GetStaticMesh());
-
-			InnerGlowMesh->SetMobility(
-				SourceMesh->Mobility);
-
-			InnerGlowMesh->SetupAttachment(
-				SourceMesh);
-
-			const FBoxSphereBounds LocalBounds =
-				SourceMesh->CalcBounds(
-					FTransform::Identity);
-
-			const float MaxExtent =
-				FMath::Max(
-					LocalBounds.BoxExtent.GetMax(),
-					1.0f);
-
-			const float InnerGlowScale =
-				1.0f + (0.15f / MaxExtent);
-
-			InnerGlowMesh->SetRelativeLocation(
-				-LocalBounds.Origin *
-				(InnerGlowScale - 1.0f));
-
-			InnerGlowMesh->SetRelativeRotation(
-				FRotator::ZeroRotator);
-
-			InnerGlowMesh->SetRelativeScale3D(
-				FVector(InnerGlowScale));
-
-			InnerGlowMesh->SetCollisionEnabled(
-				ECollisionEnabled::NoCollision);
-
-			InnerGlowMesh->SetGenerateOverlapEvents(false);
-			InnerGlowMesh->SetCastShadow(false);
-			InnerGlowMesh->SetReceivesDecals(false);
-			InnerGlowMesh->SetCanEverAffectNavigation(false);
-			InnerGlowMesh->SetTranslucentSortPriority(1);
-
-			const int32 MaterialCount =
-				FMath::Max(
-					SourceMesh->GetNumMaterials(),
-					1);
-
-			for (int32 MaterialIndex = 0;
-				MaterialIndex < MaterialCount;
-				++MaterialIndex)
-			{
-				InnerGlowMesh->SetMaterial(
-					MaterialIndex,
-					DetectedObjectInnerGlowInstance);
-			}
-
-			TargetActor->AddInstanceComponent(
-				InnerGlowMesh);
-
-			InnerGlowMesh->RegisterComponent();
-
-			FNuiRimLightMeshState& InnerGlowState =
-				RimLightMeshStates.AddDefaulted_GetRef();
-
-			InnerGlowState.RimLightMesh = InnerGlowMesh;
-		}
+		SourceMesh->SetRenderCustomDepth(true);
+		SourceMesh->SetCustomDepthStencilValue(252);
 	}
 }
 
@@ -1016,9 +731,13 @@ void ANuigurumi::ClearDetectedObjectRimLight()
 {
 	for (const FNuiRimLightMeshState& State : RimLightMeshStates)
 	{
-		if (UMeshComponent* RimMesh = State.RimLightMesh.Get())
+		if (UMeshComponent* HighlightedMesh = State.HighlightedMesh.Get())
 		{
-			RimMesh->DestroyComponent();
+			HighlightedMesh->SetRenderCustomDepth(
+				State.bPreviousRenderCustomDepth);
+
+			HighlightedMesh->SetCustomDepthStencilValue(
+				State.PreviousCustomDepthStencilValue);
 		}
 	}
 
