@@ -22,7 +22,7 @@ public:
 	URectLightComponent* RectLight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	UCurveFloat* moveCurve;
+	TArray<UCurveFloat*> moveCurve;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	float intensityMax = 2400.0f;
@@ -36,8 +36,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	float intervalMax = 7.0f;
 private:
-	float outageTime = 0.0f;
+	float elapsedTime = 0.0f;
 	float endOutageTime = 0.0f;
+	int index = 0;
 
 protected:
 	// Called when the game starts or when spawned

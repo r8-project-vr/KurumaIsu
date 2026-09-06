@@ -26,31 +26,30 @@ void AHorrorLight::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	bool isOutage = endOutageTime <= outageTime;
+	bool isOutage = endOutageTime < elapsedTime;
 
-	DEBUG_PRINT("%s : 消灯チェック / %lf <= %lf", *GetName(), endOutageTime, outageTime);
 	if (isOutage)
 	{
 		LightOutage();
 	}
 	else
 	{
-		outageTime += DeltaTime;
+		elapsedTime += DeltaTime;
 
-		float elapsedRaito = outageTime / restorationTime;
-		float ratio = moveCurve->GetFloatValue(elapsedRaito);
+		float elapsedRaito = elapsedTime / restorationTime;
+
+		float ratio = moveCurve[index]->GetFloatValue(elapsedRaito);
 
 		float newIntensity = intensityMax * ratio;
-		RectLight->Intensity = newIntensity;
-
-		DEBUG_PRINT("%s : 電気復旧中 / 現在 %lf %% / 光量 %lf", *GetName(), ratio, newIntensity);
+		RectLight->SetIntensity(newIntensity);
 	}
 }
 
 void AHorrorLight::LightOutage()
 {
-	outageTime = 0.0f;
-	RectLight->Intensity = 0.0f;
+	elapsedTime = 0.0f;
+	RectLight->SetIntensity(0.0f);
+	index = FMath::RandRange(0, moveCurve.Num() - 1);
 	endOutageTime = FMath::FRandRange(intervalMin, intervalMax);
 }
 
