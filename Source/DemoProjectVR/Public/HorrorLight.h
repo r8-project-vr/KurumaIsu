@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/RectLightComponent.h"
+#include "DebugHelper.h"
 
 #include "HorrorLight.generated.h"
 
@@ -23,19 +24,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	UCurveFloat* moveCurve;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	float intensityMax = 2400.0f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	float restorationTime = 3.0f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	float intervalMin = 1.5f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	float intervalMax = 7.0f;
 private:
 	float outageTime = 0.0f;
+	float endOutageTime = 0.0f;
 
 protected:
 	// Called when the game starts or when spawned

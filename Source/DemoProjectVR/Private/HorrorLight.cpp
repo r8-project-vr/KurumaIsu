@@ -9,7 +9,7 @@ AHorrorLight::AHorrorLight()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	RectLight == CreateDefaultSubobject<URectLightComponent>(TEXT("RectLight"));
+	RectLight = CreateDefaultSubobject<URectLightComponent>(TEXT("RectLight"));
 	RootComponent = RectLight;
 }
 
@@ -18,6 +18,7 @@ void AHorrorLight::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	LightOutage();
 }
 
 // Called every frame
@@ -25,20 +26,31 @@ void AHorrorLight::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	bool isOutage = outageTime <= 0.0f;
+	bool isOutage = endOutageTime <= outageTime;
+
+	DEBUG_PRINT("%s : 消灯チェック / %lf <= %lf", *GetName(), endOutageTime, outageTime);
 	if (isOutage)
 	{
-
+		LightOutage();
 	}
 	else
 	{
-		outageTime -= DeltaTime;
+		outageTime += DeltaTime;
+
+		float elapsedRaito = outageTime / restorationTime;
+		float ratio = moveCurve->GetFloatValue(elapsedRaito);
+
+		float newIntensity = intensityMax * ratio;
+		RectLight->Intensity = newIntensity;
+
+		DEBUG_PRINT("%s : 電気復旧中 / 現在 %lf %% / 光量 %lf", *GetName(), ratio, newIntensity);
 	}
 }
 
 void AHorrorLight::LightOutage()
 {
+	outageTime = 0.0f;
 	RectLight->Intensity = 0.0f;
-	outageTime = FMath::FRandRange(intervalMin, intervalMax);
+	endOutageTime = FMath::FRandRange(intervalMin, intervalMax);
 }
 
