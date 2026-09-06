@@ -1,14 +1,55 @@
-#include "Actor/Monster/Monster.h"
-
-#include "AI/MonsterAIController.h"
+﻿#include "Actor/Monster/Monster.h"
 #include "GameFramework/CharacterMovementComponent.h"
+
+#include "Actor/Monster/MonsterAIController.h"
 
 AMonster::AMonster()
 {
-	AIControllerClass = AMonsterAIController::StaticClass();
-	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-	bUseControllerRotationYaw = false;
-	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
+}
+
+void AMonster::ActivateCondition(APawn* FollowTarget)
+{
+	if (ActivationType != EMonsterActivationType::Condition)
+	{
+		return;
+	}
+
+	if (!FollowTarget)
+	{
+		return;
+	}
+
+	if (AMonsterAIController* AIController =
+		Cast<AMonsterAIController>(GetController()))
+	{
+		AIController->StartFollowing(FollowTarget);
+	}
+}
+
+void AMonster::DeactivateCondition()
+{
+	if (ActivationType != EMonsterActivationType::Condition)
+	{
+		return;
+	}
+
+	if (AMonsterAIController* AIController =
+		Cast<AMonsterAIController>(GetController()))
+	{
+		AIController->StopFollowing();
+	}
+}
+
+void AMonster::StartFollowing(AActor* Target)
+{
+}
+
+void AMonster::StopFollowing()
+{
+}
+
+bool AMonster::IsFollowing() const
+{
+	return false;
 }
