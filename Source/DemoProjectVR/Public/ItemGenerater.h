@@ -7,7 +7,6 @@
 #include "DebugHelper.h"
 #include "Actor/Gimmick/GimmickInterface.h"
 #include "ItemSpawnPoint.h"
-#include "ItemLight.h"
 
 #include "ItemGenerater.generated.h"
 
@@ -32,9 +31,6 @@ protected:
 public:	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	TSubclassOf<AIItem> spawnItem;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-	TSubclassOf<AItemLight> spawnLight;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	TArray<AItemSpawnPoint*> spawnPoint;

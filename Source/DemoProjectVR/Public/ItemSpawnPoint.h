@@ -6,7 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "DebugHelper.h"
 #include "Actor/Gimmick/IItem.h"
-#include "ItemLight.h"
 
 #include "ItemSpawnPoint.generated.h"
 
@@ -23,7 +22,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-	void ItemGenerate(TSubclassOf<AIItem> item, TSubclassOf<AItemLight> light);
+	void ItemGenerate(TSubclassOf<AIItem> item);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
