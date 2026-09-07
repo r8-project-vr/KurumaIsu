@@ -30,5 +30,5 @@ void AItemGenerater::ItemGenerate()
 {
 	int spawnPointIndex = FMath::RandRange(0, spawnPoint.Num() - 1);
 
-	spawnPoint[spawnPointIndex]->ItemGenerate(spawnItem);
+	spawnPoint[spawnPointIndex]->ItemGenerate(spawnItem, spawnLight);
 }

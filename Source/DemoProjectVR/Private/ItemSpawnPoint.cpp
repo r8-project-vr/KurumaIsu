@@ -27,10 +27,10 @@ void AItemSpawnPoint::Tick(float DeltaTime)
 
 }
 
-void AItemSpawnPoint::ItemGenerate(TSubclassOf<AIItem> item)
+void AItemSpawnPoint::ItemGenerate(TSubclassOf<AIItem> item, TSubclassOf<AItemLight> light)
 {
 	GetWorld()->SpawnActor<AIItem>(item, spawnPoint->GetComponentLocation(), FRotator::ZeroRotator);
-
+	GetWorld()->SpawnActor<AItemLight>(light, spawnPoint->GetComponentLocation(), FRotator::ZeroRotator);
 
 	FVector temp = spawnPoint->GetComponentLocation();
 }
