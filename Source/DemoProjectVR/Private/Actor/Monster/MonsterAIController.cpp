@@ -51,3 +51,39 @@ void AMonsterAIController::StopFollowing()
 
 	StopMovement();
 }
+
+// 一時停止
+void AMonsterAIController::PauseFollowing()
+{
+	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+
+	if (!BlackboardComp)
+	{
+		return;
+	}
+
+	BlackboardComp->SetValueAsBool(TEXT("ShouldFollow"), false);
+
+	StopMovement();
+}
+
+// 追跡再開
+void AMonsterAIController::ResumeFollowing()
+{
+	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
+
+	if (!BlackboardComp)
+	{
+		return;
+	}
+
+	AActor* TargetActor =
+		Cast<AActor>(BlackboardComp->GetValueAsObject(TEXT("TargetActor")));
+
+	if (!TargetActor)
+	{
+		return;
+	}
+
+	BlackboardComp->SetValueAsBool(TEXT("ShouldFollow"), true);
+}

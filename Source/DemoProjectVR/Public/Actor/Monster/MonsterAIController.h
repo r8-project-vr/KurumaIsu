@@ -24,6 +24,11 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Monster|AI")
 	void StopFollowing();
 
+	UFUNCTION(BlueprintCallable, Category = "Monster|AI")
+	void PauseFollowing();
+
+	UFUNCTION(BlueprintCallable, Category = "Monster|AI")
+	void ResumeFollowing();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Monster|AI")
