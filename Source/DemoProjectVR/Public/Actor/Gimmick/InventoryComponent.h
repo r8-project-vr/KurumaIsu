@@ -15,12 +15,17 @@ class DEMOPROJECTVR_API UInventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+public:
+	UFUNCTION(BlueprintCallable)
+	void ShowItems();
+	
+	UFUNCTION(BlueprintCallable)
+	int CountItems();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UFUNCTION(BlueprintCallable)
-	void ShowItems();
 
 public:
 	UPROPERTY(BlueprintReadOnly)

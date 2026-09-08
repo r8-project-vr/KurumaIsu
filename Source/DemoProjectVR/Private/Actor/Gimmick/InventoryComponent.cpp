@@ -26,3 +26,15 @@ void UInventoryComponent::ShowItems()
 	}
 }
 
+int UInventoryComponent::CountItems()
+{
+	int count = 0;
+
+	for (EItemType& item : inventory)
+	{
+		count++;
+	}
+
+	return count;
+}
+

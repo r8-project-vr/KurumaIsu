@@ -9,9 +9,11 @@ UENUM(BlueprintType)
 enum class EItemType : uint8
 {
 	None UMETA(DisplayName = "None"),
-    ExitKey UMETA(DisplayName="ExitKey"),
-    Fuse UMETA(DisplayName="Fuse"),
-    PhotoFrame UMETA(DisplayName="PhotoFrame")
+    ExitKey1 UMETA(DisplayName="ExitKey1"),
+    ExitKey2 UMETA(DisplayName="ExitKey2"),
+    ExitKey3 UMETA(DisplayName="ExitKey3"),
+    ExitKey4 UMETA(DisplayName="ExitKey4"),
+    Fuse UMETA(DisplayName="Fuse")
 };
 
 /**
