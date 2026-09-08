@@ -39,6 +39,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	bool isAxisChanged = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	AISlideDoor* doubleDoor;
+
 private:
 	FVector beforeLocation = FVector::Zero();
 

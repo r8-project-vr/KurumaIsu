@@ -93,5 +93,10 @@ void AISlideDoor::Action()
 	beforeLocation = GetActorLocation();
 	actionRunningTime = 0.0f;
 	isAction = true;
+
+	if (doubleDoor)
+	{
+		doubleDoor->Action();
+	}
 }
 
