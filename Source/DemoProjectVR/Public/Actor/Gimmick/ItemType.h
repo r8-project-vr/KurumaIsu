@@ -13,7 +13,7 @@ enum class EItemType : uint8
     ExitKey2 UMETA(DisplayName="ExitKey2"),
     ExitKey3 UMETA(DisplayName="ExitKey3"),
     ExitKey4 UMETA(DisplayName="ExitKey4"),
-    Fuse UMETA(DisplayName="Fuse")
+    Photo UMETA(DisplayName="Photo")
 };
 
 /**

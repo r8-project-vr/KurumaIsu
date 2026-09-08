@@ -22,6 +22,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	int CountItems();
 
+	UFUNCTION(BlueprintCallable)
+	bool HasItemCheck(EItemType itemType);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

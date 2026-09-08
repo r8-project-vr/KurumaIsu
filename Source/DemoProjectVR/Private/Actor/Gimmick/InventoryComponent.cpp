@@ -38,3 +38,17 @@ int UInventoryComponent::CountItems()
 	return count;
 }
 
+bool UInventoryComponent::HasItemCheck(EItemType itemType)
+{
+	bool flag = false;
+
+	for (EItemType& item : inventory)
+	{
+		if (item == itemType)
+		{
+			flag = true;
+		}
+	}
+
+	return flag;
+}
