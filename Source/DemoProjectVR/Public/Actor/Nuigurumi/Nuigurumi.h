@@ -3,23 +3,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
 #include "GameFramework/Actor.h"
 #include "Nuigurumi.generated.h"
 
 class ADeviceIMUReader;
+class UMaterialInstanceDynamic;
+class UMaterialInterface;
+class UMeshComponent;
+class UPostProcessComponent;
 
-UCLASS(Blueprintable)
-class DEMOPROJECTVR_API UNuiInteractionPromptWidget : public UUserWidget
+USTRUCT()
+struct FNuiRimLightMeshState
 {
 	GENERATED_BODY()
 
-public:
-	void BuildPrompt(
-		const FText& Text,
-		const FSlateFontInfo& Font,
-		const FLinearColor& TextColor,
-		const FLinearColor& BackgroundColor);
+	UPROPERTY()
+	TWeakObjectPtr<UMeshComponent> HighlightedMesh;
+
+	UPROPERTY()
+	bool bPreviousRenderCustomDepth = false;
+
+	UPROPERTY()
+	int32 PreviousCustomDepthStencilValue = 0;
 };
 
 UCLASS()
@@ -34,12 +39,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	UFUNCTION()
 	void HandleDetectedActorChanged(AActor* NewActor);
-
-	UFUNCTION()
-	void HandleGimmickFocusChanged(bool bCanAction);
 
 public:
 	// Called every frame
@@ -111,23 +114,18 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|IMU", meta = (ClampMin = "0.2", ClampMax = "5.0"))
 	float IMUCalibrationDuration = 2.0f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
-	FText InteractionPromptText;
+	/** Applies a screen-space inward glow only to the object currently found by NuiEyeSightComponent. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction Rim Light")
+	bool bUseDetectedObjectRimLight = true;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
-	TSubclassOf<UUserWidget> InteractionPromptWidgetClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction Rim Light")
+	TObjectPtr<UMaterialInterface> DetectedObjectPostProcessMaterial;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
-	FVector InteractionPromptOffset = FVector(0.0f, 0.0f, 30.0f);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction Rim Light")
+	FLinearColor DetectedObjectRimLightColor = FLinearColor(0.08f, 0.65f, 1.0f, 1.0f);
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
-	FSlateFontInfo InteractionPromptFont;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
-	FLinearColor InteractionPromptTextColor = FLinearColor::White;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction UI")
-	FLinearColor InteractionPromptBackgroundColor = FLinearColor(0.02f, 0.02f, 0.02f, 0.75f);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction Rim Light", meta = (ClampMin = "0.0", DisplayName = "Rim Glow Intensity"))
+	float DetectedObjectInnerGlowIntensity = 2.8f;
 
 private:
 	// 基本Component
@@ -135,13 +133,16 @@ private:
 	class USphereComponent* Collider;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UWidgetComponent* InteractionPromptWidget;
-
-	UPROPERTY()
-	AActor* InteractionPromptTarget = nullptr;
+	UPostProcessComponent* DetectedObjectPostProcess;
 
 	UPROPERTY()
 	ADeviceIMUReader* IMUReader = nullptr;
+
+	UPROPERTY()
+	UMaterialInstanceDynamic* DetectedObjectPostProcessInstance = nullptr;
+
+	UPROPERTY()
+	TArray<FNuiRimLightMeshState> RimLightMeshStates;
 
 	FQuat IMUReferenceOrientation = FQuat::Identity;
 	FQuat CurrentIMUOffset = FQuat::Identity;
@@ -151,4 +152,6 @@ private:
 	bool bHasIMUReference = false;
 
 	void UpdateIMUTransform(float DeltaTime, const FVector& BaseLocation, const FRotator& BaseRotation);
+	void ApplyDetectedObjectRimLight(AActor* TargetActor);
+	void ClearDetectedObjectRimLight();
 };
