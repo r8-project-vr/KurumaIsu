@@ -219,13 +219,9 @@ void AMonster::Tick(float DeltaTime)
 
 void AMonster::ActivateCondition(APawn* FollowTarget)
 {
-	if (ActivationType != EMonsterActivationType::Condition)
-	{
-		return;
-	}
-
 	if (!FollowTarget)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("%s: ActivateCondition called without a follow target"), *GetName());
 		return;
 	}
 
@@ -238,11 +234,6 @@ void AMonster::ActivateCondition(APawn* FollowTarget)
 
 void AMonster::DeactivateCondition()
 {
-	if (ActivationType != EMonsterActivationType::Condition)
-	{
-		return;
-	}
-
 	bConditionActive = false;
 	bTemporarilyPaused = false;
 
@@ -259,11 +250,21 @@ void AMonster::StartFollowing(AActor* Target)
 		return;
 	}
 
-	if (AMonsterAIController* AIController =
-		Cast<AMonsterAIController>(GetController()))
+	AMonsterAIController* AIController = Cast<AMonsterAIController>(GetController());
+	if (!AIController)
+	{
+		SpawnDefaultController();
+		AIController = Cast<AMonsterAIController>(GetController());
+	}
+
+	if (AIController)
 	{
 		AIController->StartFollowing(Target);
 		bIsFollowing = true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("%s: MonsterAIController is not available"), *GetName());
 	}
 }
 

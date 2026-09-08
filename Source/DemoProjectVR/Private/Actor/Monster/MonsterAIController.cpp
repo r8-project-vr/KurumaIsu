@@ -28,6 +28,9 @@ void AMonsterAIController::StartFollowing(AActor* Target)
 
 	if (!BlackboardComp)
 	{
+		// Keep condition-triggered monsters functional even when their behavior
+		// tree or blackboard has not been initialized yet.
+		MoveToActor(Target, 100.0f, true, true, true, nullptr, true);
 		return;
 	}
 
@@ -40,14 +43,11 @@ void AMonsterAIController::StopFollowing()
 {
 	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
 
-	if (!BlackboardComp)
+	if (BlackboardComp)
 	{
-		return;
+		BlackboardComp->SetValueAsBool(TEXT("ShouldFollow"), false);
+		BlackboardComp->ClearValue(TEXT("TargetActor"));
 	}
-
-	BlackboardComp->SetValueAsBool(TEXT("ShouldFollow"), false);
-
-	BlackboardComp->ClearValue(TEXT("TargetActor"));
 
 	StopMovement();
 }
@@ -57,12 +57,10 @@ void AMonsterAIController::PauseFollowing()
 {
 	UBlackboardComponent* BlackboardComp = GetBlackboardComponent();
 
-	if (!BlackboardComp)
+	if (BlackboardComp)
 	{
-		return;
+		BlackboardComp->SetValueAsBool(TEXT("ShouldFollow"), false);
 	}
-
-	BlackboardComp->SetValueAsBool(TEXT("ShouldFollow"), false);
 
 	StopMovement();
 }

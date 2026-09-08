@@ -380,14 +380,12 @@ void ANuigurumi::UpdateIMUTransform(
 	// IMU Readerを検索する
 	if (!IsValid(IMUReader))
 	{
-		for (
-			TActorIterator<ADeviceIMUReader>
-			It(GetWorld());
-			It;
-			++It)
+		TActorIterator<ADeviceIMUReader>
+		It(GetWorld());
+
+		if (It)
 		{
 			IMUReader = *It;
-			break;
 		}
 	}
 
