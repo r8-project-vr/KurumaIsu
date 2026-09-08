@@ -120,12 +120,14 @@ void AIElevator::Tick(float DeltaTime)
 
 				if (isDoorOpenOnly)
 				{
+					isDoorOpenOnly = false;
 					isAction = true;
 					actionRunningTime = 0.0f;
 				}
 				else
 				{
-					isDoorOpenOnly = false;
+					isAction = true;
+					actionRunningTime = 0.0f;
 				}
 			}
 			else 
