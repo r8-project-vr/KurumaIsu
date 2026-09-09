@@ -2,6 +2,11 @@
 
 
 #include "Actor/Gimmick/IElevator.h"
+#include "Components/AudioComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Sound/SoundAttenuation.h"
+#include "Sound/SoundBase.h"
+#include "UObject/ConstructorHelpers.h"
 
 // Sets default values
 AIElevator::AIElevator()
@@ -17,6 +22,29 @@ AIElevator::AIElevator()
 
 	door2 = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Door2"));
 	door2->SetupAttachment(RootComponent);
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> DoorSoundAsset(
+		TEXT("/Game/Sound/SFX/ElevatorDoor.ElevatorDoor"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> EngineSoundAsset(
+		TEXT("/Game/Sound/SFX/ElevatorEngine.ElevatorEngine"));
+	ElevatorDoorSound = DoorSoundAsset.Object;
+	ElevatorEngineSound = EngineSoundAsset.Object;
+
+	ElevatorSoundAttenuation = CreateDefaultSubobject<USoundAttenuation>(TEXT("ElevatorSoundAttenuation"));
+	FSoundAttenuationSettings& Attenuation = ElevatorSoundAttenuation->Attenuation;
+	Attenuation.bAttenuate = true;
+	Attenuation.bSpatialize = true;
+	Attenuation.AttenuationShape = EAttenuationShape::Sphere;
+	Attenuation.AttenuationShapeExtents = FVector(100.0f, 0.0f, 0.0f);
+	Attenuation.FalloffDistance = 1400.0f;
+	Attenuation.DistanceAlgorithm = EAttenuationDistanceModel::Linear;
+	Attenuation.bApplyNormalizationToStereoSounds = true;
+
+	EngineAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("EngineAudio"));
+	EngineAudio->SetupAttachment(RootComponent);
+	EngineAudio->bAutoActivate = false;
+	EngineAudio->bAllowSpatialization = true;
+	EngineAudio->AttenuationSettings = ElevatorSoundAttenuation;
 }
 
 // Called when the game starts or when spawned
@@ -29,6 +57,14 @@ void AIElevator::BeginPlay()
 	//ドアの操作
 	beforeDoor1 = door1->GetComponentLocation();
 	beforeDoor2 = door2->GetComponentLocation();
+	EngineAudio->OnAudioFinished.AddDynamic(this, &AIElevator::UpdateEngineSound);
+}
+
+void AIElevator::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	EngineAudio->OnAudioFinished.RemoveDynamic(this, &AIElevator::UpdateEngineSound);
+	EngineAudio->Stop();
+	Super::EndPlay(EndPlayReason);
 }
 
 // Called every frame
@@ -78,6 +114,7 @@ void AIElevator::Tick(float DeltaTime)
 			}
 			else 
 			{
+				UpdateEngineSound();
 				StartDoorAction();
 			}
 			return;
@@ -135,13 +172,14 @@ void AIElevator::Tick(float DeltaTime)
 				isOpen = true;
 			}
 			isDoorAction = false;
+			UpdateEngineSound();
 		}
 	}
 }
 
 void AIElevator::Action()
 {
-	if (isAction)
+	if (isAction || isDoorAction)
 	{
 		DEBUG_PRINT("%s : Action中断 / 実行中により", *GetName());
 		return;
@@ -171,6 +209,7 @@ void AIElevator::Action()
 	else
 	{
 		isAction = true;
+		UpdateEngineSound();
 	}
 }
 
@@ -182,6 +221,8 @@ bool AIElevator::MoveSet(int next)
 	if (canMove)
 	{
 		nextFloor = next;
+		// A new call may change the direction during a trip.
+		UpdateEngineSound();
 	}
 
 	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
@@ -191,6 +232,19 @@ bool AIElevator::MoveSet(int next)
 
 void AIElevator::StartDoorAction()
 {
+	if (isDoorAction || isAction)
+	{
+		return;
+	}
+
+	if (!isOpen && ElevatorDoorSound)
+	{
+		const FVector DoorLocation = (door1->GetComponentLocation() + door2->GetComponentLocation()) * 0.5f;
+		UGameplayStatics::SpawnSoundAttached(ElevatorDoorSound, RootComponent,
+			NAME_None, DoorLocation, EAttachLocation::KeepWorldPosition,
+			true, 1.0f, 1.0f, FMath::Max(0.0f, DoorSoundStartTime), ElevatorSoundAttenuation);
+	}
+
 	FVector door = door1->GetComponentLocation();
 	doorTargetLocation = beforeDoor1;
 	doorTargetLocation.Z = door.Z;
@@ -199,4 +253,21 @@ void AIElevator::StartDoorAction()
 	beforeDoor2.Z = door.Z;
 	isDoorAction = true;
 	actionRunningTime = 0.0f;
+}
+
+void AIElevator::UpdateEngineSound()
+{
+	const bool bDescending = isAction && nextFloor < floor;
+	if (!bDescending || !ElevatorEngineSound)
+	{
+		EngineAudio->Stop();
+		return;
+	}
+
+	if (!EngineAudio->IsPlaying())
+	{
+		EngineAudio->SetSound(ElevatorEngineSound);
+		EngineAudio->SetAttenuationSettings(ElevatorSoundAttenuation);
+		EngineAudio->Play(FMath::Max(0.0f, EngineSoundStartTime));
+	}
 }
