@@ -62,6 +62,8 @@ public:
 	UPROPERTY(BlueprintAssignable, Category="Gimmick")
 	FOnGimmickFocusChanged OnGimmickFocusChanged;
 
+	UPROPERTY(BlueprintReadOnly)
+	AActor* DetectedActor = nullptr;
 public:
 	UFUNCTION(BlueprintCallable,Category = "EyeSight")
 	void DetectObject();
@@ -82,8 +84,6 @@ public:
 	bool TryActionDetectedGimmick(AActor* InstigatorActor = nullptr);
 
 private:
-	UPROPERTY()
-	AActor* DetectedActor = nullptr;
 };
 
 
