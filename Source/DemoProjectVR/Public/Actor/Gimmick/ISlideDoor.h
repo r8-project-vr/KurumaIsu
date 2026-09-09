@@ -8,6 +8,9 @@
 
 #include "ISlideDoor.generated.h"
 
+class USoundBase;
+class USoundAttenuation;
+
 UCLASS()
 class DEMOPROJECTVR_API AISlideDoor : public AActor, public IGimmickInterface
 {
@@ -42,7 +45,20 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	AISlideDoor* doubleDoor;
 
+	// Played once when opening or closing starts, at the moving door's location.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door|Audio")
+	TObjectPtr<USoundBase> DoorMovementSound;
+
+	// Skip the beginning of the sound; this does not delay the door action.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door|Audio", meta = (ClampMin = "0.0", Units = "s"))
+	float DoorSoundStartTime = 1.5f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door|Audio")
+	TObjectPtr<USoundAttenuation> DoorSoundAttenuation;
+
 private:
+	void StartMovement(bool bPlaySound);
+
 	FVector beforeLocation = FVector::Zero();
 
 	bool isAction = false;

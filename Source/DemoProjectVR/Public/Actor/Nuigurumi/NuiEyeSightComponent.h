@@ -50,7 +50,7 @@ public:
 
 	// GimmickInterfaceを持つActorを検出対象にします
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gimmick")
-	bool bDetectGimmickInterface = false;
+	bool bDetectGimmickInterface = true;
 
 	UPROPERTY(BlueprintAssignable, Category="EyeSight")
 	FOnDetectionChanged OnDetectionChanged;

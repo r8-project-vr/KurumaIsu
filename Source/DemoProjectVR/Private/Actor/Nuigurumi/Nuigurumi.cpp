@@ -56,12 +56,12 @@ namespace
 		// Sensor Y -> Unreal Z
 		//
 		// 実機の取り付け方向に合わせて
-		// PitchとYawの回転方向を反転する
+		// PitchとYawが実機と同じ方向に動くように符号を合わせる
 
 		FQuat UnrealRotation(
 			-RelativeSensorRotation.X,
-			RelativeSensorRotation.Z,
-			RelativeSensorRotation.Y,
+			-RelativeSensorRotation.Z,
+			-RelativeSensorRotation.Y,
 			RelativeSensorRotation.W
 		);
 

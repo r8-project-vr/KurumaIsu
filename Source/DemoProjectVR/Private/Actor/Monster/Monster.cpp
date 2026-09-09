@@ -5,12 +5,81 @@
 
 #include "Actor/Monster/MonsterAIController.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundAttenuation.h"
+#include "Sound/SoundBase.h"
+#include "UObject/ConstructorHelpers.h"
 
 #pragma region BASE
 
 AMonster::AMonster()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	static ConstructorHelpers::FObjectFinder<USoundBase> TransitionAsset(
+		TEXT("/Game/Sound/SFX/MonsterFirst.MonsterFirst"));
+	static ConstructorHelpers::FObjectFinder<USoundBase> MovementAsset(
+		TEXT("/Game/Sound/SFX/MonsterSound.MonsterSound"));
+	MovementTransitionSound = TransitionAsset.Object;
+	MovementLoopSound = MovementAsset.Object;
+
+	MonsterSoundAttenuation = CreateDefaultSubobject<USoundAttenuation>(TEXT("MonsterSoundAttenuation"));
+	FSoundAttenuationSettings& Attenuation = MonsterSoundAttenuation->Attenuation;
+	Attenuation.bAttenuate = true;
+	Attenuation.bSpatialize = true;
+	Attenuation.AttenuationShape = EAttenuationShape::Sphere;
+	Attenuation.AttenuationShapeExtents = FVector(100.0f, 0.0f, 0.0f);
+	Attenuation.FalloffDistance = 1400.0f;
+	Attenuation.DistanceAlgorithm = EAttenuationDistanceModel::Linear;
+	Attenuation.bApplyNormalizationToStereoSounds = true;
+
+	MovementAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("MovementAudio"));
+	TransitionAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("TransitionAudio"));
+	for (UAudioComponent* Audio : {MovementAudio.Get(), TransitionAudio.Get()})
+	{
+		Audio->SetupAttachment(GetRootComponent());
+		Audio->bAutoActivate = false;
+		Audio->bAllowSpatialization = true;
+		Audio->AttenuationSettings = MonsterSoundAttenuation;
+	}
+}
+
+void AMonster::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	bAudioMoving = false;
+	MovementAudio->Stop();
+	TransitionAudio->Stop();
+	Super::EndPlay(EndPlayReason);
+}
+
+void AMonster::UpdateMovementAudio(float Speed)
+{
+	// Hysteresis prevents repeated start/stop sounds around the movement threshold.
+	const bool bMovingNow = Speed > (bAudioMoving ? 5.0f : 10.0f);
+	if (bMovingNow == bAudioMoving)
+	{
+		return;
+	}
+	bAudioMoving = bMovingNow;
+
+	TransitionAudio->Stop();
+	if (MovementTransitionSound)
+	{
+		TransitionAudio->SetSound(MovementTransitionSound);
+		TransitionAudio->SetAttenuationSettings(MonsterSoundAttenuation);
+		TransitionAudio->Play(FMath::Max(0.0f, TransitionSoundStartTime));
+	}
+
+	if (bAudioMoving && MovementLoopSound)
+	{
+		MovementAudio->SetSound(MovementLoopSound);
+		MovementAudio->SetAttenuationSettings(MonsterSoundAttenuation);
+		MovementAudio->Play(FMath::Max(0.0f, MovementSoundStartTime));
+	}
+	else
+	{
+		MovementAudio->Stop();
+	}
 }
 
 void AMonster::BeginPlay()
@@ -53,6 +122,7 @@ void AMonster::BeginPlay()
 void AMonster::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	UpdateMovementAudio(GetVelocity().Size2D());
 
 	if (!MonsterMesh)
 	{

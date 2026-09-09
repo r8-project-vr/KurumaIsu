@@ -31,6 +31,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	int nextFloor = 1;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Elevator|Audio")
+	TObjectPtr<USoundBase> ElevatorButtonSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Elevator|Audio", meta = (ClampMin = "0.0", Units = "s"))
+	float ButtonSoundStartTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Elevator|Audio")
+	TObjectPtr<USoundAttenuation> ButtonSoundAttenuation;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

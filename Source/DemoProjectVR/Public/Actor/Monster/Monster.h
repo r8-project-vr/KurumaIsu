@@ -12,6 +12,9 @@ enum class EMonsterActivationType : uint8
 	Condition   UMETA(DisplayName = "Condition")
 };
 class UStaticMeshComponent;
+class UAudioComponent;
+class USoundBase;
+class USoundAttenuation;
 
 UCLASS(Blueprintable)
 class DEMOPROJECTVR_API AMonster : public ACharacter
@@ -20,6 +23,7 @@ class DEMOPROJECTVR_API AMonster : public ACharacter
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	AMonster();
@@ -61,6 +65,27 @@ public:
 	bool bIsFollowing = false;
 
 protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Audio")
+	TObjectPtr<USoundBase> MovementTransitionSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Audio")
+	TObjectPtr<USoundBase> MovementLoopSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Audio", meta = (ClampMin = "0.0", Units = "s"))
+	float TransitionSoundStartTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Audio", meta = (ClampMin = "0.0", Units = "s"))
+	float MovementSoundStartTime = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Monster|Audio")
+	TObjectPtr<USoundAttenuation> MonsterSoundAttenuation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Monster|Audio")
+	TObjectPtr<UAudioComponent> MovementAudio;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Monster|Audio")
+	TObjectPtr<UAudioComponent> TransitionAudio;
+
 	// 動きさ関連関数、変数
 	FVector BaseMeshRelativeLocation = FVector::ZeroVector;
 	FRotator BaseMeshRelativeRotation = FRotator::ZeroRotator;
@@ -115,4 +140,8 @@ protected:
 	// Resolved to BPMonster's visible StaticMeshComponent during BeginPlay.
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Transient, Category = "Monster")
 	TObjectPtr<UStaticMeshComponent> MonsterMesh;
+
+private:
+	bool bAudioMoving = false;
+	void UpdateMovementAudio(float Speed);
 };
