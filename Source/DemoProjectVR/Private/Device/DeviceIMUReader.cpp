@@ -1,4 +1,4 @@
-#include "Device/DeviceIMUReader.h"
+﻿#include "Device/DeviceIMUReader.h"
 
 #include "Engine/Engine.h"
 #include "Internationalization/Regex.h"
@@ -263,6 +263,6 @@ void ADeviceIMUReader::DrawDebugStatus() const
 			ComPort, ParsedSampleCount, DeviceOrientation.Pitch, DeviceOrientation.Yaw, DeviceOrientation.Roll,
 			LastReceivedLine.IsEmpty() ? TEXT("(waiting for data)") : *LastReceivedLine)
 		: FString::Printf(TEXT("Device IMU: COM%d disconnected"), ComPort);
-	GEngine->AddOnScreenDebugMessage(static_cast<uint64>(reinterpret_cast<UPTRINT>(this)), 0.0f,
-		IsDeviceConnected() ? FColor::Cyan : FColor::Red, Status);
+	//GEngine->AddOnScreenDebugMessage(static_cast<uint64>(reinterpret_cast<UPTRINT>(this)), 0.0f,
+	//	IsDeviceConnected() ? FColor::Cyan : FColor::Red, Status);
 }
