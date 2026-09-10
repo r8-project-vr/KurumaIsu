@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "DebugHelper.h"
+#include "../../../../Plugins/ASerialCom/Source/ASerialCom/Public/ASerialLibControllerWin.h"
 
 #if PLATFORM_WINDOWS
 #include "WindowsSerial/WindowsSerial.h"
@@ -14,6 +15,13 @@
 #endif
 
 #include "DeviceMoveReader.generated.h"
+
+enum class EDeviceRequest
+{
+	None,
+	UpdateFlag,
+	RPS
+};
 
 UCLASS()
 class DEMOPROJECTVR_API ADeviceMoveReader : public AActor
@@ -30,62 +38,41 @@ public:
 	bool ConnectDevice();
 	UFUNCTION(BlueprintCallable, Category = "Device|IMU")
 	void DisconnectDevice();
-	//UFUNCTION(BlueprintPure, Category = "Device|IMU")
-	//bool IsDeviceConnected() const;
+	UFUNCTION(BlueprintPure, Category = "Device|IMU")
+	bool IsDeviceConnected() const;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
+	int TargetDeviceID = 0x03;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
+	int DeviceVersion = 0x02;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
 	int32 ComPort = 3;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1200"))
 	int32 BaudRate = 115200;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial")
 	bool bConnectOnBeginPlay = true;
+	
+
 	/** Automatically finds a connected Seeed XIAO (USB VID 2886), so COM numbers may differ between PCs. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial")
 	bool bAutoDetectComPort = true;
-	///** Retry delay when the device is connected after the game has already started. */
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "0.5"))
-	//float ReconnectInterval = 2.0f;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug")
-	//bool bShowOnScreenDebug = true;
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug")
-	//bool bLogReceivedLines = false;
 
-	///** Higher values react faster. The default intentionally produces a calm debug signal. */
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug", meta = (ClampMin = "0.1", ClampMax = "30.0"))
-	//float DebugSmoothingSpeed = 2.0f;
+	/** Retry delay when the device is connected after the game has already started. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "0.5"))
+	float ReconnectInterval = 2.0f;
 
-	///** Gyroscope changes below this magnitude are treated as sensor noise. */
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug", meta = (ClampMin = "0.0"))
-	//float GyroscopeDeadZone = 3.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug")
+	bool bShowOnScreenDebug = true;
 
-	///** Per-axis acceleration changes below this amount are hidden from the filtered display. */
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug", meta = (ClampMin = "0.0"))
-	//float AccelerationDeadZone = 0.03f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug")
+	bool bLogReceivedLines = false;
 
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
-	//FVector Gyroscope = FVector::ZeroVector;
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
-	//FVector Acceleration = FVector::ZeroVector;
-
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
-	//FVector FilteredGyroscope = FVector::ZeroVector;
-
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
-	//FVector FilteredAcceleration = FVector::ZeroVector;
-
-	///** Sensor-fused physical orientation received from the XIAO firmware. */
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
-	//FRotator DeviceOrientation = FRotator::ZeroRotator;
-
-	///** Raw fused orientation from a QUAT,W,X,Y,Z packet. */
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
-	//FQuat DeviceOrientationQuaternion = FQuat::Identity;
-
-	
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
-	//FString LastReceivedLine;
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
-	//int32 ParsedSampleCount = 0;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
+	FString LastReceivedLine;
 
 	// 車輪のデバイスのシリアル番号（確認方法：デバイスマネージャーからデバイスID確認）
 	// デバイス[3]：15bf3a9
@@ -98,15 +85,22 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	//void ReadAvailableSerialData();
-	//bool ParseIMULine(const FString& Line);
-	//void UpdateFilteredDebugValues(float DeltaTime);
-	//void DrawDebugStatus() const;
+	void ReadAvailableSerialData();
+	bool ParseMovePacket(const ASerialDataStruct::ASerialData& data);
+	void ReadDataProcess();
+	void RequestUpdateFlag();
+	void RequestRPS();
 	int32 FindXiaoComPort() const;
 
-	WindowsSerial* SerialPort = nullptr;
+	UASerialLibControllerWin* SerialController = nullptr;
+	WindowsSerial* SerialInterface = nullptr;
 	FString ReceiveBuffer;
-	//float ReconnectElapsed = 0.0f;
-public:	
+	bool bDeviceConnected = false;
+	u_int Command = 0x21;
 
+	float PollingTimer = 0.0f;
+	float PollingInterval = 0.01f;
+	bool bWaitingForResponse = false;
+	EDeviceRequest CurrentRequest = EDeviceRequest::None;
+	float CurrentRPS = 0.0f;
 };

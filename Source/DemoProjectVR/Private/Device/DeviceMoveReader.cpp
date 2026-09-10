@@ -16,6 +16,34 @@ void ADeviceMoveReader::BeginPlay()
 {
 	Super::BeginPlay();
 	if (bConnectOnBeginPlay) { ConnectDevice(); }
+
+	//// WindowsSerial を作成
+	//if (SerialInterface == nullptr)
+	//{
+	//	SerialInterface = new WindowsSerial(BaudRate);
+	//}
+
+	//// Controller がまだ作られていなければ作成
+	//if (SerialController == nullptr)
+	//{
+	//	SerialController = NewObject<UASerialLibControllerWin>(this);
+
+	//	if (SerialController != nullptr)
+	//	{
+	//		SerialController->Initialize(TargetDeviceID, DeviceVersion);
+	//		DEBUG_PRINT("SerialController created.");
+	//	}
+	//	else
+	//	{
+	//		DEBUG_PRINT("Failed to create SerialController.");
+	//		return;
+	//	}
+
+	//	// WindowsSerialをControllerに渡す
+	//	SerialController->SetInterfacePt(SerialInterface);
+
+	//	DEBUG_PRINT("SerialController initalized.");
+	//}
 }
 
 // Called every frame
@@ -23,12 +51,43 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (!bDeviceConnected)
+	{
+		return;
+	}
+
+	PollingTimer += DeltaTime;
+
+	// まだ応答待ちなら読み取り処理
+	if (bWaitingForResponse)
+	{
+		ReadDataProcess();
+		return;
+	}
+
+	// ポーリング周期前なら何もしない
+	if (PollingTimer < PollingInterval)
+	{
+		return;
+	}
+
+	PollingTimer = 0.0f;
+
+	// まず更新フラグを要求
+	RequestUpdateFlag();
 }
 
 bool ADeviceMoveReader::ConnectDevice()
 {
 #if PLATFORM_WINDOWS
-	DisconnectDevice();
+
+	// 既存接続がある場合だけ切断
+	if (SerialController != nullptr)
+	{
+		DisconnectDevice();
+	}
+
+	// COMポート自動検索
 	if (bAutoDetectComPort)
 	{
 		const int32 DetectedPort = FindXiaoComPort();
@@ -39,22 +98,86 @@ bool ADeviceMoveReader::ConnectDevice()
 		}
 		ComPort = DetectedPort;
 	}
-	SerialPort = new WindowsSerial(BaudRate);
-	const int32 Result = SerialPort->OpenPort(ComPort);
-	if (Result != 0)
+
+	// コントローラー生成
+	SerialController = NewObject<UASerialLibControllerWin>(this);
+
+	if (SerialController == nullptr)
 	{
-		DEBUG_PRINT("Failed to open COM%d at %d baud (error %d).", ComPort, BaudRate, Result);
-		delete SerialPort;
-		SerialPort = nullptr;
+		DEBUG_PRINT("Failed to create SerialController");
 		return false;
 	}
-	if (!SerialPort->SetControlSignals(true, true))
+
+	DEBUG_PRINT("SerialController created.");
+
+	SerialController->Initialize(TargetDeviceID, 0x01, 0x01);
+
+	DEBUG_PRINT("SerialController initialized.");
+
+	WindowsSerial* serial = new WindowsSerial();
+
+	if (serial == nullptr)
 	{
-		DEBUG_PRINT("COM%d opened, but enabling DTR/RTS failed.", ComPort);
+		DEBUG_PRINT("Failed to create WindowsSerial");
+		return false;
 	}
-	SerialPort->clear();
-	ReceiveBuffer.Reset();
-	DEBUG_PRINT("Connected to IMU device on COM%d at %d baud.", ComPort, BaudRate);
+
+	// コントローラーへ設定
+	SerialController->SetInterfacePt(serial);
+
+	// COMポートに接続
+	int result = SerialController->ConnectDevice(ComPort);
+
+	if (result == -1)
+	{
+		DEBUG_PRINT("Failed to connect Move device on COM%d", ComPort);
+		return false;
+	}
+
+	DEBUG_PRINT("Connected to Move device on COM%d", ComPort);
+
+	bDeviceConnected = true;
+
+	//// WindowSerialを作る
+	//SerialInterface = new WindowsSerial(BaudRate);
+
+	//// ASerialControllerを作る
+	//SerialController = NewObject<UASerialLibControllerWin>(this);
+
+	//if (!IsValid(SerialController))
+	//{
+	//	DEBUG_PRINT("Failed to create Serial Controller.");
+
+	//	delete SerialInterface;
+	//	SerialInterface = nullptr;
+
+	//	return false;
+	//}
+
+	//// Controllerを初期化
+	//SerialController->Initialize(TargetDeviceID, DeviceVersion);
+
+	//// WindowSerialをControllerに渡す
+	//SerialController->SetInterfacePt(SerialInterface);
+
+	//// Controller経由で接続
+	//const ConnectResult result = SerialController->ConnectDevice(ComPort);
+
+	//if (result != ConnectResult::Succ)
+	//{
+	//	DEBUG_PRINT("Failed to connect Move device on COM%d.", ComPort);
+
+	//	delete SerialInterface;
+	//	SerialInterface = nullptr;
+	//	SerialController = nullptr;
+
+	//	return false;
+	//}
+
+	//ReceiveBuffer.Reset();
+
+	//DEBUG_PRINT("Connected to Move device on COM%d.", ComPort);
+
 	return true;
 #else
 	DEBUG_PRINT("DeviceMoveReader currently supports Windows only.");
@@ -65,15 +188,190 @@ bool ADeviceMoveReader::ConnectDevice()
 void ADeviceMoveReader::DisconnectDevice()
 {
 #if PLATFORM_WINDOWS
-	if (SerialPort != nullptr)
+	// Controller経由で切断
+	if (IsValid(SerialController))
 	{
-		if (SerialPort->GetState()) { SerialPort->ClosePort(); }
-		delete SerialPort;
-		SerialPort = nullptr;
-		DEBUG_PRINT("Move device disconnected.");
+		SerialController->DisConnectDevice();
 	}
+
+	SerialController = nullptr;
+
+	// WindowsSerialを削除
+	if (SerialInterface != nullptr)
+	{
+		delete SerialInterface;
+		SerialInterface = nullptr;
+	}
+
+	DEBUG_PRINT("Move device disconnected.");
 #endif
 	ReceiveBuffer.Reset();
+}
+
+bool ADeviceMoveReader::IsDeviceConnected() const
+{
+#if PLATFORM_WINDOWS
+	if (SerialController == nullptr)
+	{
+		DEBUG_PRINT("SerialController Nullptr");
+		return false;
+	}
+
+	return SerialController->GetConnectionState();
+#else
+	return false;
+#endif
+}
+
+void ADeviceMoveReader::ReadAvailableSerialData()
+{
+#if PLATFORM_WINDOWS
+	if (!IsDeviceConnected()) 
+	{ 
+		DEBUG_PRINT("Move device NOT connected");
+		return; 
+	}
+
+	// デバイスにデータ要求
+	SerialController->WriteData(Command);
+	
+	ASerialDataStruct::ASerialData data;
+
+	const int result = SerialController->ReadDataProcess(&data);
+	DEBUG_PRINT("ReadDataProcess Result = %d", result);
+	
+	// 失敗用
+	if (result == -1)
+	{
+		DEBUG_PRINT("Serial read error.");
+		return;
+	}
+
+	// まだパケットが完成していない
+	if (result == 0)
+	{
+		return;
+	}
+
+	// パケット受信完了
+	if (result == 1)
+	{
+		ParseMovePacket(data);
+	}
+#endif
+}
+
+bool ADeviceMoveReader::ParseMovePacket(const ASerialDataStruct::ASerialData& data)
+{
+	DEBUG_PRINT("================PACKET RECEIVED================");
+	for (int i = 0; i < 8; i++)
+	{
+		DEBUG_PRINT("PACKET[%d] = %d (0x%02X)", i, data.data[i], data.data[i]);
+	}
+	
+	return true;
+}
+
+void ADeviceMoveReader::ReadDataProcess()
+{
+	if (SerialController == nullptr)
+	{
+		return;
+	}
+
+	ASerialDataStruct::ASerialData resp;
+
+	const int result = SerialController->ReadData(&resp);
+
+	if (result != 0)
+	{
+		return;
+	}
+
+	//DEBUG_PRINT("Response received. data_num = %d", resp.data_num);
+
+	bWaitingForResponse = false;
+
+	// 更新フラグの応答
+	if (CurrentRequest == EDeviceRequest::UpdateFlag)
+	{
+		if (resp.data_num < 1)
+		{
+			DEBUG_PRINT("UpdateFlag response is invalid");
+			CurrentRequest = EDeviceRequest::None;
+			return;
+		}
+
+		uint8 UpdateFlag = resp.data[0];
+
+		//DEBUG_PRINT("Update Flag = %d", UpdateFlag);
+		
+		CurrentRequest = EDeviceRequest::None;
+
+		if (UpdateFlag == 1)
+		{
+			RequestRPS();
+		}
+
+		return;
+	}
+
+	// RPSの応答
+	if (CurrentRequest == EDeviceRequest::RPS)
+	{
+		if (resp.data_num < 4)
+		{
+			DEBUG_PRINT("RPS response is invalid");
+			return;
+		}
+
+		// ビッグエンディアンでint32に変換
+		int32 rawRPS = (static_cast<int32>(resp.data[0]) << 24) | (static_cast<int32>(resp.data[1]) << 16) | (static_cast<int32>(resp.data[2]) << 8) | static_cast<int32>(resp.data[3]);
+
+		// 100倍されているので戻す
+		float RPS = static_cast<float>(rawRPS) / 100.0f;
+
+		DEBUG_PRINT("Raw RPS = %d", rawRPS);
+		DEBUG_PRINT("RPS = %lf", RPS);
+
+		CurrentRPS = RPS;
+
+		CurrentRequest = EDeviceRequest::None;
+
+		return;
+	}
+}
+
+void ADeviceMoveReader::RequestUpdateFlag()
+{
+	if (SerialController == nullptr)
+	{
+		return;
+	}
+
+	SerialController->WriteData(0x20);
+
+	bWaitingForResponse = true;
+
+	CurrentRequest = EDeviceRequest::UpdateFlag;
+
+	//DEBUG_PRINT("Request Update Flag");
+}
+
+void ADeviceMoveReader::RequestRPS()
+{
+	if (SerialController == nullptr)
+	{
+		return;
+	}
+
+	SerialController->WriteData(0x22);
+
+	CurrentRequest = EDeviceRequest::RPS;
+
+	bWaitingForResponse = true;
+
+	DEBUG_PRINT("Request RPS");
 }
 
 int32 ADeviceMoveReader::FindXiaoComPort() const
@@ -108,10 +406,7 @@ int32 ADeviceMoveReader::FindXiaoComPort() const
 			}
 
 			const FString InstanceId(InstanceIdBuffer);
-
-			// 確認用
-			DEBUG_PRINT("Device Instance ID: %s", *InstanceId);
-
+			
 			// 指定した個体だけ通す
 			if (!InstanceId.Contains(DeviceSirialNumber, ESearchCase::IgnoreCase))
 			{
