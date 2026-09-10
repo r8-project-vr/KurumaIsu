@@ -49,9 +49,9 @@ void AIElevatorButton::Action()
 	}
 
 	// BPのメソッドを検索
-	UFunction* interface = elevatorActor->FindFunction(TEXT("MoveElevator"));
+	UFunction* method = elevatorActor->FindFunction(TEXT("MoveElevator"));
 
-	if (interface)
+	if (method)
 	{
 		if (ElevatorButtonSound)
 		{
@@ -66,7 +66,7 @@ void AIElevatorButton::Action()
 
 		Param.next = nextFloor;
 
-		elevatorActor->ProcessEvent(interface, &Param);
+		elevatorActor->ProcessEvent(method, &Param);
 	}
 }
 
