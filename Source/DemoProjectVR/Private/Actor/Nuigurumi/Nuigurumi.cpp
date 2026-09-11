@@ -56,12 +56,12 @@ namespace
 		// Sensor Y -> Unreal Z
 		//
 		// 実機の取り付け方向に合わせて
-		// PitchとYawの回転方向を反転する
+		// PitchとYawが実機と同じ方向に動くように符号を合わせる
 
 		FQuat UnrealRotation(
 			-RelativeSensorRotation.X,
-			RelativeSensorRotation.Z,
-			RelativeSensorRotation.Y,
+			-RelativeSensorRotation.Z,
+			-RelativeSensorRotation.Y,
 			RelativeSensorRotation.W
 		);
 
@@ -465,7 +465,7 @@ void ANuigurumi::UpdateIMUTransform(
 	// キャリブレーション中
 	if (!bHasIMUReference)
 	{
-		if (bShowIMUDebug &&
+		/*if (bShowIMUDebug &&
 			GEngine != nullptr)
 		{
 			GEngine->AddOnScreenDebugMessage(
@@ -482,7 +482,7 @@ void ANuigurumi::UpdateIMUTransform(
 					IMUCalibrationDuration
 				)
 			);
-		}
+		}*/
 
 
 		SetActorLocation(
@@ -639,7 +639,7 @@ void ANuigurumi::UpdateIMUTransform(
 
 
 	// デバッグ表示
-	if (bShowIMUDebug &&
+	/*if (bShowIMUDebug &&
 		GEngine != nullptr)
 	{
 		const FRotator MirroredRotation =
@@ -669,7 +669,7 @@ void ANuigurumi::UpdateIMUTransform(
 				MirroredRotation.Roll
 			)
 		);
-	}
+	}*/
 }
 
 
