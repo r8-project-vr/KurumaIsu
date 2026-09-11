@@ -1,4 +1,4 @@
-#include "Device/DeviceIMUReader.h"
+﻿#include "Device/DeviceIMUReader.h"
 
 #include "Engine/Engine.h"
 #include "Internationalization/Regex.h"
@@ -34,7 +34,7 @@ void ADeviceIMUReader::Tick(float DeltaTime)
 	}
 	ReadAvailableSerialData();
 	UpdateFilteredDebugValues(DeltaTime);
-	DrawDebugStatus();
+	//DrawDebugStatus();
 }
 
 void ADeviceIMUReader::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -256,13 +256,13 @@ void ADeviceIMUReader::UpdateFilteredDebugValues(float DeltaTime)
 
 void ADeviceIMUReader::DrawDebugStatus() const
 {
-	if (!bShowOnScreenDebug || GEngine == nullptr) { return; }
-	const FString Status = IsDeviceConnected()
-		? FString::Printf(
-			TEXT("Device IMU [COM%d]  Samples: %d\nOrientation: Pitch %.1f  Yaw %.1f  Roll %.1f\nRaw: %s"),
-			ComPort, ParsedSampleCount, DeviceOrientation.Pitch, DeviceOrientation.Yaw, DeviceOrientation.Roll,
-			LastReceivedLine.IsEmpty() ? TEXT("(waiting for data)") : *LastReceivedLine)
-		: FString::Printf(TEXT("Device IMU: COM%d disconnected"), ComPort);
-	GEngine->AddOnScreenDebugMessage(static_cast<uint64>(reinterpret_cast<UPTRINT>(this)), 0.0f,
-		IsDeviceConnected() ? FColor::Cyan : FColor::Red, Status);
+	//if (!bShowOnScreenDebug || GEngine == nullptr) { return; }
+	//const FString Status = IsDeviceConnected()
+	//	? FString::Printf(
+	//		TEXT("Device IMU [COM%d]  Samples: %d\nOrientation: Pitch %.1f  Yaw %.1f  Roll %.1f\nRaw: %s"),
+	//		ComPort, ParsedSampleCount, DeviceOrientation.Pitch, DeviceOrientation.Yaw, DeviceOrientation.Roll,
+	//		LastReceivedLine.IsEmpty() ? TEXT("(waiting for data)") : *LastReceivedLine)
+	//	: FString::Printf(TEXT("Device IMU: COM%d disconnected"), ComPort);
+	//GEngine->AddOnScreenDebugMessage(static_cast<uint64>(reinterpret_cast<UPTRINT>(this)), 0.0f,
+	//	IsDeviceConnected() ? FColor::Cyan : FColor::Red, Status);
 }
