@@ -4,10 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Device/DeviceMoveReader.h"
 #include "EngineUtils.h"
 
 #include "MoveInput.generated.h"
+
+class ADeviceMoveReader;
 
 UCLASS()
 class DEMOPROJECTVR_API AMoveInput : public AActor
@@ -21,12 +22,22 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void ReadDeviceValue();
+	UFUNCTION(BlueprintPure)
+	float GetDeviceValue();
+
+	UFUNCTION()
+	void SetValue(float newRps);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	ADeviceMoveReader* MoveReader = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
+	float DeviceRPS = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
+	bool IsRight = false;
 };

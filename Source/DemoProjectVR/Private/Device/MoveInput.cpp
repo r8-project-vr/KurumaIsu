@@ -2,6 +2,8 @@
 
 #include "Device/MoveInput.h"
 #include "DebugHelper.h"
+#include "Device/DeviceMoveReader.h"
+
 
 // Sets default values
 AMoveInput::AMoveInput()
@@ -16,6 +18,8 @@ void AMoveInput::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	MoveReader->SetMoveInput(this);
+	IsRight = MoveReader->bInputInversion;
 }
 
 // Called every frame
@@ -23,22 +27,24 @@ void AMoveInput::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	ReadDeviceValue();
+	GetDeviceValue();
 }
 
-void AMoveInput::ReadDeviceValue()
+float AMoveInput::GetDeviceValue()
 {
-	// Move Readerを検索する
-	if (!IsValid(MoveReader))
+	if (MoveReader == nullptr)
 	{
-		TActorIterator<ADeviceMoveReader>It(GetWorld());
-
-		if (It)
-		{
-			MoveReader = *It;
-
-			DEBUG_PRINT("%s : Device Search", *GetName());
-		}
+		DEBUG_PRINT("Move Reader NOT Setting");
+		return 0.0f;
 	}
+
+	return DeviceRPS;
+}
+
+void AMoveInput::SetValue(float newRps)
+{
+	DeviceRPS = newRps;
+
+	DEBUG_PRINT("%s : RPS = %lf", *GetName(), DeviceRPS);
 }
 
