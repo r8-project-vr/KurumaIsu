@@ -45,6 +45,6 @@ void AMoveInput::SetValue(float newRps)
 {
 	DeviceRPS = newRps;
 
-	DEBUG_PRINT("%s : RPS = %lf", *GetName(), DeviceRPS);
+	//DEBUG_PRINT("%s : RPS = %lf", *GetName(), DeviceRPS);
 }
 
