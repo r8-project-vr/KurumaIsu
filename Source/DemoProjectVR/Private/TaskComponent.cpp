@@ -21,13 +21,17 @@ void UTaskComponent::BeginPlay()
 
 	// ...
 	
-	stringChap1.taskString.Add("目の前のドアを開けてみよう");
-	stringChap2.taskString.Add("chap2");
-	stringChap3.taskString.Add("chap3");
+	stringChap1.taskString.Add(TEXT("目の前のドアを開けてみよう"));
+	stringChap1.taskString.Add(TEXT("エレベーターのドアを開けよう"));
+	stringChap1.taskString.Add(TEXT("エレベーターで下の階に向かおう"));
+	stringChap2.taskString.Add(TEXT("chap2"));
+	stringChap3.taskString.Add(TEXT("chap3"));
 
 	clearChap1.classNum.Add(0);
-	clearChap2.classNum.Add(-1);
-	clearChap3.classNum.Add(-2);
+	clearChap1.classNum.Add(1);
+	clearChap1.classNum.Add(2);
+	clearChap2.classNum.Add(1);
+	clearChap3.classNum.Add(2);
 
 	tasks.Add(stringChap1);
 	tasks.Add(stringChap2);
@@ -50,6 +54,7 @@ void UTaskComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 FString UTaskComponent::MakeTaskString()
 {
 	FString output = "";
+	output += TEXT("\n");
 	int showTaskNum = showTaskMin;
 
 	while (showTaskNum <= showTaskMax)
@@ -64,7 +69,7 @@ FString UTaskComponent::MakeTaskString()
 		}
 
 		output += tasks[chapter - 1].taskString[showTaskNum - 1];
-		output += "\n";
+		output += TEXT("\n");
 
 		showTaskNum++;
 	}
@@ -72,27 +77,44 @@ FString UTaskComponent::MakeTaskString()
 	return output;
 }
 
-void UTaskComponent::TaskClearCheck(AActor* checkActor)
+bool UTaskComponent::TaskClearCheck(AActor* checkActor)
 {
+	bool flag = false;
 	int checkTaskNum = runTaskMin;
 
 	while (checkTaskNum <= runTaskMax)
 	{
-		bool isClear = needClearClass[taskClearNum[chapter - 1].classNum[checkTaskNum - 1]] == checkActor;
+		int index = taskClearNum[chapter - 1].classNum[checkTaskNum - 1];
+		if (index == -2)
+		{
+			checkTaskNum++;
+			continue;
+		}
+
+		bool isClear = needClearClass[index]->GetClass() == checkActor->GetClass();
 		if (isClear)
 		{
 			taskClearNum[chapter - 1].classNum[checkTaskNum - 1] = clearNum;
+			flag = true;
 		}
 
 		checkTaskNum++;
 	}
+
+	return flag;
 }
 
 bool UTaskComponent::IsTaskClear(int chap, int num)
 {
 	bool flag = false;
 
-	flag = taskClearNum[chap].classNum[num] == clearNum;
+	flag = taskClearNum[chap - 1].classNum[num - 1] == clearNum;
 
 	return flag;
+}
+
+void UTaskComponent::ToNextRunTask()
+{
+	runTaskMin++;
+	runTaskMax++;
 }
