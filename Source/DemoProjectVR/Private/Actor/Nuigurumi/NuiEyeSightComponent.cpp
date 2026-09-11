@@ -9,6 +9,7 @@
 #include "Engine/EngineTypes.h"
 #include "Actor/Gimmick/GimmickInterface.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Actor/Gimmick/IElevator.h"
 
 // Sets default values for this component's properties
 UNuiEyeSightComponent::UNuiEyeSightComponent()
@@ -97,11 +98,21 @@ void UNuiEyeSightComponent::DetectObject()
 			continue;
 		}
 
+		if (TargetActor->IsA<AIElevator>())
+		{
+			continue;
+		}
+
 		const bool bMatchesTag = bDetectTargetTag
 			&& TargetTag != NAME_None
 			&& TargetActor->ActorHasTag(TargetTag);
 		const bool bMatchesGimmick = bDetectGimmickInterface
 			&& TargetActor->GetClass()->ImplementsInterface(UGimmickInterface::StaticClass());
+
+		if (!bMatchesTag && !bMatchesGimmick)
+		{
+			continue;
+		}
 
 		const auto ConsiderPoint = [&](const FVector& Point)
 		{
