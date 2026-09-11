@@ -2,6 +2,7 @@
 
 
 #include "Device/DeviceMoveReader.h"
+#include "Device/MoveInput.h"
 
 // Sets default values
 ADeviceMoveReader::ADeviceMoveReader()
@@ -16,34 +17,6 @@ void ADeviceMoveReader::BeginPlay()
 {
 	Super::BeginPlay();
 	if (bConnectOnBeginPlay) { ConnectDevice(); }
-
-	//// WindowsSerial を作成
-	//if (SerialInterface == nullptr)
-	//{
-	//	SerialInterface = new WindowsSerial(BaudRate);
-	//}
-
-	//// Controller がまだ作られていなければ作成
-	//if (SerialController == nullptr)
-	//{
-	//	SerialController = NewObject<UASerialLibControllerWin>(this);
-
-	//	if (SerialController != nullptr)
-	//	{
-	//		SerialController->Initialize(TargetDeviceID, DeviceVersion);
-	//		DEBUG_PRINT("SerialController created.");
-	//	}
-	//	else
-	//	{
-	//		DEBUG_PRINT("Failed to create SerialController.");
-	//		return;
-	//	}
-
-	//	// WindowsSerialをControllerに渡す
-	//	SerialController->SetInterfacePt(SerialInterface);
-
-	//	DEBUG_PRINT("SerialController initalized.");
-	//}
 }
 
 // Called every frame
@@ -138,46 +111,6 @@ bool ADeviceMoveReader::ConnectDevice()
 
 	bDeviceConnected = true;
 
-	//// WindowSerialを作る
-	//SerialInterface = new WindowsSerial(BaudRate);
-
-	//// ASerialControllerを作る
-	//SerialController = NewObject<UASerialLibControllerWin>(this);
-
-	//if (!IsValid(SerialController))
-	//{
-	//	DEBUG_PRINT("Failed to create Serial Controller.");
-
-	//	delete SerialInterface;
-	//	SerialInterface = nullptr;
-
-	//	return false;
-	//}
-
-	//// Controllerを初期化
-	//SerialController->Initialize(TargetDeviceID, DeviceVersion);
-
-	//// WindowSerialをControllerに渡す
-	//SerialController->SetInterfacePt(SerialInterface);
-
-	//// Controller経由で接続
-	//const ConnectResult result = SerialController->ConnectDevice(ComPort);
-
-	//if (result != ConnectResult::Succ)
-	//{
-	//	DEBUG_PRINT("Failed to connect Move device on COM%d.", ComPort);
-
-	//	delete SerialInterface;
-	//	SerialInterface = nullptr;
-	//	SerialController = nullptr;
-
-	//	return false;
-	//}
-
-	//ReceiveBuffer.Reset();
-
-	//DEBUG_PRINT("Connected to Move device on COM%d.", ComPort);
-
 	return true;
 #else
 	DEBUG_PRINT("DeviceMoveReader currently supports Windows only.");
@@ -223,53 +156,14 @@ bool ADeviceMoveReader::IsDeviceConnected() const
 #endif
 }
 
-void ADeviceMoveReader::ReadAvailableSerialData()
+void ADeviceMoveReader::SetMoveInput(AMoveInput* moveinput)
 {
-#if PLATFORM_WINDOWS
-	if (!IsDeviceConnected()) 
-	{ 
-		DEBUG_PRINT("Move device NOT connected");
-		return; 
-	}
-
-	// デバイスにデータ要求
-	SerialController->WriteData(Command);
-	
-	ASerialDataStruct::ASerialData data;
-
-	const int result = SerialController->ReadDataProcess(&data);
-	DEBUG_PRINT("ReadDataProcess Result = %d", result);
-	
-	// 失敗用
-	if (result == -1)
-	{
-		DEBUG_PRINT("Serial read error.");
-		return;
-	}
-
-	// まだパケットが完成していない
-	if (result == 0)
-	{
-		return;
-	}
-
-	// パケット受信完了
-	if (result == 1)
-	{
-		ParseMovePacket(data);
-	}
-#endif
+	MoveInput = moveinput;
 }
 
-bool ADeviceMoveReader::ParseMovePacket(const ASerialDataStruct::ASerialData& data)
+void ADeviceMoveReader::SendDeviceValue()
 {
-	DEBUG_PRINT("================PACKET RECEIVED================");
-	for (int i = 0; i < 8; i++)
-	{
-		DEBUG_PRINT("PACKET[%d] = %d (0x%02X)", i, data.data[i], data.data[i]);
-	}
-	
-	return true;
+	MoveInput->SetValue(CurrentRPS);
 }
 
 void ADeviceMoveReader::ReadDataProcess()
@@ -331,10 +225,35 @@ void ADeviceMoveReader::ReadDataProcess()
 		// 100倍されているので戻す
 		float RPS = static_cast<float>(rawRPS) / 100.0f;
 
-		DEBUG_PRINT("Raw RPS = %d", rawRPS);
-		DEBUG_PRINT("RPS = %lf", RPS);
+		// 正負の取得
+		SerialController->WriteData(0x23);
+		const int resultTemp = SerialController->ReadData(&resp);
+		
+		if (resultTemp != 0)
+		{
+			DEBUG_PRINT("Fail to Read 0x23");
+			return;
+		}
+
+		bool isPositive = resp.data[0] == 0;
+		if (isPositive)
+		{
+			rawRPS *= -1;
+			RPS *= -1.0f;
+		}
+		if (bInputInversion)
+		{
+			rawRPS *= -1;
+			RPS *= -1.0f;
+		}
+
+
+		//DEBUG_PRINT("Raw RPS = %d", rawRPS);
+		//DEBUG_PRINT("RPS = %lf", RPS);
 
 		CurrentRPS = RPS;
+
+		SendDeviceValue();
 
 		CurrentRequest = EDeviceRequest::None;
 
@@ -371,7 +290,7 @@ void ADeviceMoveReader::RequestRPS()
 
 	bWaitingForResponse = true;
 
-	DEBUG_PRINT("Request RPS");
+	//DEBUG_PRINT("Request RPS");
 }
 
 int32 ADeviceMoveReader::FindXiaoComPort() const

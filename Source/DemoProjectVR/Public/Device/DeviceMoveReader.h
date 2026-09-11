@@ -16,6 +16,8 @@
 
 #include "DeviceMoveReader.generated.h"
 
+class AMoveInput;
+
 enum class EDeviceRequest
 {
 	None,
@@ -40,6 +42,10 @@ public:
 	void DisconnectDevice();
 	UFUNCTION(BlueprintPure, Category = "Device|IMU")
 	bool IsDeviceConnected() const;
+
+	void SetMoveInput(AMoveInput* moveinput);
+
+	void SendDeviceValue();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
 	int TargetDeviceID = 0x03;
@@ -77,16 +83,17 @@ public:
 	// 車輪のデバイスのシリアル番号（確認方法：デバイスマネージャーからデバイスID確認）
 	// デバイス[3]：15bf3a9
 	// デバイス[4]：5c03106
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
 	FString DeviceSirialNumber = "5c03106";
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
+	bool bInputInversion = false;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 private:
-	void ReadAvailableSerialData();
-	bool ParseMovePacket(const ASerialDataStruct::ASerialData& data);
 	void ReadDataProcess();
 	void RequestUpdateFlag();
 	void RequestRPS();
@@ -103,4 +110,5 @@ private:
 	bool bWaitingForResponse = false;
 	EDeviceRequest CurrentRequest = EDeviceRequest::None;
 	float CurrentRPS = 0.0f;
+	AMoveInput* MoveInput = nullptr;
 };
