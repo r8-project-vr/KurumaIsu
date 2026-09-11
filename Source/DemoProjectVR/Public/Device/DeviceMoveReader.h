@@ -33,6 +33,8 @@ class DEMOPROJECTVR_API ADeviceMoveReader : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ADeviceMoveReader();
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick(float DeltaTime) override;
 	//virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
