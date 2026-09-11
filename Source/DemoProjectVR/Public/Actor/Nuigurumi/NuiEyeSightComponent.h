@@ -88,6 +88,15 @@ public:
 	bool TryActionDetectedGimmick(AActor* InstigatorActor = nullptr);
 
 private:
+
+	float GazeHoldTime = 0.0f;
+
+	bool bGazeActionTriggered = false;
+
+	UPROPERTY(EditAnywhere, Category = "Nui|Sight")
+	float GazeActionTime = 3.0f;
+
+	void UpdateGazeAction(float DeltaTime);
 };
 
 

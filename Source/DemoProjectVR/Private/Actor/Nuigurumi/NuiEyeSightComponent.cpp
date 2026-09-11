@@ -40,7 +40,8 @@ void UNuiEyeSightComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	DetectObject();
-	// ...
+
+	UpdateGazeAction(DeltaTime);
 }
 
 void UNuiEyeSightComponent::DetectObject()
@@ -199,6 +200,9 @@ void UNuiEyeSightComponent::SetDetectedActor(AActor* NewActor)
 
 	if (OldActor != DetectedActor)
 	{
+		GazeHoldTime = 0.0f;
+		bGazeActionTriggered = false;
+
 		OnDetectedActorChanged.Broadcast(DetectedActor);
 	}
 
@@ -239,4 +243,32 @@ bool UNuiEyeSightComponent::TryActionDetectedGimmick(AActor* InstigatorActor)
 
 	Gimmick->Action();
 	return true;
+}
+
+void UNuiEyeSightComponent::UpdateGazeAction(float DeltaTime)
+{
+
+	if (!HasDetectedGimmick())
+	{
+		GazeHoldTime = 0.0f;
+		bGazeActionTriggered = false;
+		return;
+	}
+
+	if (bGazeActionTriggered)
+	{
+		return;
+	}
+
+	GazeHoldTime += DeltaTime;
+
+	if (GazeHoldTime >= GazeActionTime)
+	{
+
+
+		if (TryActionDetectedGimmick(GetOwner()))
+		{
+			bGazeActionTriggered = true;
+		}
+	}
 }
