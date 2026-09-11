@@ -102,7 +102,10 @@ void AISlideDoor::Tick(float DeltaTime)
 
 void AISlideDoor::Action()
 {
-	StartMovement(true);
+	if(!isDirectAction)
+	{
+		StartMovement(true);
+	}
 }
 
 void AISlideDoor::StartMovement(bool bPlaySound)
