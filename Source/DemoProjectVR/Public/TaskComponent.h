@@ -41,7 +41,10 @@ public:
 	FString MakeTaskString();
 
 	UFUNCTION(BlueprintCallable)
-	void TaskClearCheck(AActor* checkActor);
+	bool TaskClearCheck(AActor* checkActor);
+
+	UFUNCTION(BlueprintCallable)
+	void ToNextRunTask();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -52,7 +55,7 @@ private:
 
 private:
 	// 各タスクの先頭につくマーク
-	TArray<FString> taskMarks = { "・", "✓" };
+	TArray<FString> taskMarks = { TEXT("・"), TEXT("✓") };
 
 	int clearNum = -2;
 
@@ -91,5 +94,5 @@ public:
 
 	// タスククリアに必要なギミッククラス
 	UPROPERTY(EditAnywhere, Category = "Setting")
-	TArray<TScriptInterface<IGimmickInterface>> needClearClass;
+	TArray<AActor*> needClearClass;
 };

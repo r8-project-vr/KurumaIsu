@@ -1,0 +1,28 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+#include "ASerialLibControllerWin.h"
+#include "Device/Move.h"
+
+// Sets default values
+AMove::AMove()
+{
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	UASerialLibControllerWin* Ctrl = NewObject<UASerialLibControllerWin>();
+}
+
+// Called when the game starts or when spawned
+void AMove::BeginPlay()
+{
+	Super::BeginPlay();
+	
+}
+
+// Called every frame
+void AMove::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
