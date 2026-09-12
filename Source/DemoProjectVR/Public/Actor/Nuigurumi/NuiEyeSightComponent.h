@@ -41,6 +41,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight")
 	float SightPitchOffset = 0.0f;
 
+	/** Draw the search cone and collision points (green: accepted, red: outside, yellow: filtered). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight|Debug")
+	bool bShowDetectionDebug = true;
+
 	// このタグを持つActorもDetectedActorに入れます -> 戦闘がないので今は使わないです
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "EyeSight")
 	FName TargetTag = TEXT("Monster");
@@ -84,6 +88,15 @@ public:
 	bool TryActionDetectedGimmick(AActor* InstigatorActor = nullptr);
 
 private:
+
+	float GazeHoldTime = 0.0f;
+
+	bool bGazeActionTriggered = false;
+
+	UPROPERTY(EditAnywhere, Category = "Nui|Sight")
+	float GazeActionTime = 3.0f;
+
+	void UpdateGazeAction(float DeltaTime);
 };
 
 

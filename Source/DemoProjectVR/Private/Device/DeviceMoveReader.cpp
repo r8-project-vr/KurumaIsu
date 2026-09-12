@@ -12,6 +12,15 @@ ADeviceMoveReader::ADeviceMoveReader()
 
 }
 
+void ADeviceMoveReader::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	DisconnectDevice();
+}
+
+
+
 // Called when the game starts or when spawned
 void ADeviceMoveReader::BeginPlay()
 {
@@ -46,8 +55,9 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 
 	PollingTimer = 0.0f;
 
-	// まず更新フラグを要求
-	RequestUpdateFlag();
+	//// まず更新フラグを要求
+	//RequestUpdateFlag();
+	RequestRPS();
 }
 
 bool ADeviceMoveReader::ConnectDevice()
@@ -274,7 +284,7 @@ void ADeviceMoveReader::RequestUpdateFlag()
 
 	CurrentRequest = EDeviceRequest::UpdateFlag;
 
-	//DEBUG_PRINT("Request Update Flag");
+	DEBUG_PRINT("Request Update Flag");
 }
 
 void ADeviceMoveReader::RequestRPS()
