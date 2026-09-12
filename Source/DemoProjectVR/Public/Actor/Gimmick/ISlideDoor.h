@@ -43,6 +43,9 @@ protected:
 	bool isAxisChanged = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
+	bool isDirectAction = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	AISlideDoor* doubleDoor;
 
 	// Played once when opening or closing starts, at the moving door's location.
