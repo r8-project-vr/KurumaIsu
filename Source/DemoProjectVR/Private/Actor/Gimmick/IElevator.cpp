@@ -71,6 +71,34 @@ void AIElevator::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void AIElevator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (isCorrectionMove)
+	{
+		correctionTime += DeltaTime;
+		float ratio = correctionTime / needCorrectionTime;
+		if (ratio > 1.0f)
+		{
+			ratio = 1.0f;
+		}
+
+		FVector targetLocation = beforeLocation;
+		
+		targetLocation.Z += correctionDistance;
+
+		FVector newLocation = FMath::Lerp(beforeLocation, targetLocation, ratio);
+
+		SetActorLocation(newLocation);
+
+		if (ratio >= 1.0f)
+		{
+			isCorrectionMove = false;
+			UpdateEngineSound();
+			StartDoorAction();
+		}
+
+		return;
+	}
+
 	actionRunningTime += DeltaTime;
 
 	if (isAction)
@@ -89,6 +117,10 @@ void AIElevator::Tick(float DeltaTime)
 
 		float elapsedRaito = actionRunningTime / moveTime;
 		float ratio = moveCurve->GetFloatValue(elapsedRaito);
+		if (ratio > 1.0f)
+		{
+			ratio = 1.0f;
+		}
 
 		bool isCompleted = elapsedRaito > 1.0f;
 		if (isCompleted)
@@ -104,16 +136,21 @@ void AIElevator::Tick(float DeltaTime)
 
 			isAction = false;
 
-			bool isMoveComplete = floor == nextFloor;
+			bool isFloorMoveComplete = floor == nextFloor;
 
-			DEBUG_PRINT("%s : 現在 %d 階 / 目的地 %d 階", *GetName(), floor, nextFloor);
-
-			if (!isMoveComplete)
+			if (!isFloorMoveComplete)
 			{
 				Action();
 			}
 			else 
 			{
+				if(!IsCompleteAction())
+				{
+					isCorrectionMove = true;
+					correctionTime = 0.0f;
+					beforeLocation = GetActorLocation();
+					return;
+				}
 				UpdateEngineSound();
 				StartDoorAction();
 			}
@@ -223,9 +260,24 @@ bool AIElevator::MoveSet(int next)
 		nextFloor = next;
 		// A new call may change the direction during a trip.
 		UpdateEngineSound();
-	}
 
-	DEBUG_PRINT("%s : 今 %d 階、移動先は %d 階", *GetName(), floor, nextFloor);
+		FVector temp = GetActorLocation();
+		beforeLocationZ = temp.Z;
+
+		bool isMoveUp = nextFloor > floor;
+		int moveFloor = nextFloor - floor;
+		moveFloor = FMath::Abs(moveFloor);
+
+		if (isMoveUp)
+		{
+			targetLocationZ = moveDistance * (float)moveFloor;
+		}
+		else
+		{
+			targetLocationZ = moveDistance * (float)moveFloor;
+			targetLocationZ *= -1.0f;
+		}
+	}
 
 	return canMove;
 }
@@ -270,4 +322,13 @@ void AIElevator::UpdateEngineSound()
 		EngineAudio->SetAttenuationSettings(ElevatorSoundAttenuation);
 		EngineAudio->Play(FMath::Max(0.0f, EngineSoundStartTime));
 	}
+}
+
+bool AIElevator::IsCompleteAction()
+{
+	FVector evLocation = GetActorLocation();
+
+	bool isComplete = FMath::IsNearlyEqual(evLocation.Z, beforeLocationZ + targetLocationZ, allowableErrorRange);
+
+	return isComplete;
 }

@@ -80,6 +80,8 @@ private:
 	UFUNCTION()
 	void UpdateEngineSound();
 
+	bool IsCompleteAction();
+
 	FVector beforeLocation = FVector::Zero();
 	FVector beforeDoor1 = FVector::Zero();
 	FVector beforeDoor2 = FVector::Zero();
@@ -89,10 +91,14 @@ private:
 	bool isDoorAction = false;
 	bool isOpen = false;
 	bool isDoorOpenOnly = false;
+	bool isCorrectionMove = false;
 	float actionRunningTime = 0.0f;
-
-	// 移動先の階数
-	int nextFloor = 0;
+	float targetLocationZ = 0.0f;
+	float beforeLocationZ = 0.0f;
+	float allowableErrorRange = 0.01f;
+	float needCorrectionTime = 1.0f;
+	float correctionTime = 0.0f;
+	float correctionDistance = 0.0f;
 
 public:	
 	// Called every frame
@@ -107,4 +113,8 @@ public:
 	// 現在の階数
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	int floor = 1;
+
+	// 移動先の階数
+	UPROPERTY(BlueprintReadWrite)
+	int nextFloor = 0;
 };
