@@ -240,6 +240,7 @@ bool UNuiEyeSightComponent::TryActionDetectedGimmick(AActor* InstigatorActor)
 	{
 		return false;
 	}
+	OnActionPlayed.Broadcast();
 
 	Gimmick->Action();
 	return true;

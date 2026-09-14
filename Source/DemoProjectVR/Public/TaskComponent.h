@@ -45,6 +45,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ToNextRunTask();
+
+	UFUNCTION(BlueprintCallable)
+	void ToNextShowTask();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
