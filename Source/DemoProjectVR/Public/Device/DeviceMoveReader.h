@@ -85,6 +85,7 @@ public:
 	// 車輪のデバイスのシリアル番号（確認方法：デバイスマネージャーからデバイスID確認）
 	// デバイス[3]：15bf3a9
 	// デバイス[4]：5c03106
+	// デバイス[5]：2c214f43
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
 	FString DeviceSirialNumber = "5c03106";
 
