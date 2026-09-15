@@ -38,6 +38,17 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
 	float DeviceRPS = 0.0f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	bool IsRight = false;
+
+private:
+
+	const float DecayFactor = 10.0f;
+
+	float DesiredRPS;
+	float ActualRPS;
+
+	float SustainElapsed;
+	const float SustainTimeout = 1.0f;
+	const float TimeoutDecay = 8.0f;
 };
