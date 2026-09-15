@@ -10,7 +10,8 @@ AMoveInput::AMoveInput()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	ActualRPS = 0.0f;
+	SustainElapsed = 0.0f;
 }
 
 // Called when the game starts or when spawned
@@ -27,6 +28,14 @@ void AMoveInput::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	SustainElapsed += DeltaTime;
+	if (SustainElapsed >= SustainTimeout)
+	{
+		DesiredRPS *= (float)exp(-DeltaTime * TimeoutDecay);
+		//DEBUG_PRINT("Stop Detected: %lf", DesiredRPS);
+	}
+	float t = exp(-DeltaTime * DecayFactor);
+	ActualRPS = DesiredRPS + (ActualRPS - DesiredRPS) * t;
 	GetDeviceValue();
 }
 
@@ -38,13 +47,18 @@ float AMoveInput::GetDeviceValue()
 		return 0.0f;
 	}
 
-	return DeviceRPS;
+	return ActualRPS;
 }
 
 void AMoveInput::SetValue(float newRps)
 {
+	if (abs(DeviceRPS - newRps) > 0.001f)
+	{
+		SustainElapsed = 0.0f;
+		DesiredRPS = newRps;
+		DEBUG_PRINT("%s : Update Detected: %lf", *GetName(), newRps);
+	}
 	DeviceRPS = newRps;
-
 	//DEBUG_PRINT("%s : RPS = %lf", *GetName(), DeviceRPS);
 }
 
