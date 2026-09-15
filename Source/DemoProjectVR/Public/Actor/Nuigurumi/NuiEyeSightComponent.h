@@ -12,6 +12,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDetectionChanged, bool, bHasDetec
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDetectedActorChanged, AActor*, DetectedActor);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGimmickFocusChanged, bool, bCanAction);
 
+// ギミックに対して「作動」させたときのデリゲート --作成吉田
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnActionPlayed);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class DEMOPROJECTVR_API UNuiEyeSightComponent : public UActorComponent
 {
@@ -68,6 +71,10 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	AActor* DetectedActor = nullptr;
+
+	// GimmickInterfaceを持つActorに対して「作動」したときのブループリントイベントノード --作成吉田
+	UPROPERTY(BlueprintAssignable, Category = "Gimmick")
+	FOnActionPlayed OnActionPlayed;
 public:
 	UFUNCTION(BlueprintCallable,Category = "EyeSight")
 	void DetectObject();

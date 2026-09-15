@@ -22,7 +22,7 @@ void UTaskComponent::BeginPlay()
 	// ...
 	
 	stringChap1.taskString.Add(TEXT("目の前のドアを開けてみよう"));
-	stringChap1.taskString.Add(TEXT("エレベーターのドアを開けよう"));
+	stringChap1.taskString.Add(TEXT("エレベーターの前まで移動しよう"));
 	stringChap1.taskString.Add(TEXT("エレベーターで下の階に向かおう"));
 	stringChap2.taskString.Add(TEXT("chap2"));
 	stringChap3.taskString.Add(TEXT("chap3"));
@@ -108,13 +108,45 @@ bool UTaskComponent::IsTaskClear(int chap, int num)
 {
 	bool flag = false;
 
-	flag = taskClearNum[chap - 1].classNum[num - 1] == clearNum;
-
+	bool isNotNull = taskClearNum.Num() >= chap;
+	if (isNotNull)
+	{
+		isNotNull &= taskClearNum[chap - 1].classNum.Num() >= num;
+		if (isNotNull)
+		{
+			flag = taskClearNum[chap - 1].classNum[num - 1] == clearNum;
+		}
+		else
+		{
+			DEBUG_PRINT("%s：タスク番号が範囲外です。", *GetName());
+		}
+	}
+	else 
+	{
+		DEBUG_PRINT("%s：チャプター番号が範囲外です。", *GetName());
+	}
+	
 	return flag;
 }
 
 void UTaskComponent::ToNextRunTask()
 {
-	runTaskMin++;
-	runTaskMax++;
+	bool isNotNull = taskClearNum[chapter - 1].classNum.Num() > runTaskMax;
+
+	if (isNotNull)
+	{
+		runTaskMin++;
+		runTaskMax++;
+	}
+}
+
+
+void UTaskComponent::ToNextShowTask()
+{
+	bool isNotNull = taskClearNum[chapter - 1].classNum.Num() > showTaskMax;
+
+	if (isNotNull)
+	{
+		showTaskMax++;
+	}
 }
