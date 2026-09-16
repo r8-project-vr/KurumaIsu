@@ -48,6 +48,15 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ToNextShowTask();
+
+	UFUNCTION(BlueprintCallable)
+	void ResetTask();
+
+	UFUNCTION(BlueprintCallable)
+	void SetRunTask(int min, int max);
+
+	UFUNCTION(BlueprintCallable)
+	void AddChapter();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -96,6 +105,6 @@ public:
 	TArray<FTaskClearRow> taskClearNum;
 
 	// タスククリアに必要なギミッククラス
-	UPROPERTY(EditAnywhere, Category = "Setting")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	TArray<AActor*> needClearClass;
 };

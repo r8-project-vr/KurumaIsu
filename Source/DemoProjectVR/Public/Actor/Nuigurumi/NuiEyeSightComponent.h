@@ -101,7 +101,7 @@ private:
 	bool bGazeActionTriggered = false;
 
 	UPROPERTY(EditAnywhere, Category = "Nui|Sight")
-	float GazeActionTime = 3.0f;
+	float GazeActionTime = 1.5f;
 
 	void UpdateGazeAction(float DeltaTime);
 };

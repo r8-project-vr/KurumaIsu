@@ -45,6 +45,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	bool isDirectAction = false;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Setting")
+	bool isOpen = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	AISlideDoor* doubleDoor;
 
@@ -65,7 +68,6 @@ private:
 	FVector beforeLocation = FVector::Zero();
 
 	bool isAction = false;
-	bool isOpen = false;
 	float actionRunningTime = 0.0f;
 
 public:
