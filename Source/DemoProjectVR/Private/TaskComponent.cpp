@@ -24,14 +24,30 @@ void UTaskComponent::BeginPlay()
 	stringChap1.taskString.Add(TEXT("目の前のドアを開けてみよう"));
 	stringChap1.taskString.Add(TEXT("エレベーターの前まで移動しよう"));
 	stringChap1.taskString.Add(TEXT("エレベーターで下の階に向かおう"));
-	stringChap2.taskString.Add(TEXT("chap2"));
-	stringChap3.taskString.Add(TEXT("chap3"));
+
+	stringChap2.taskString.Add(TEXT("ダイヤの鍵を手に入れよう"));
+	stringChap2.taskString.Add(TEXT("スペードの鍵を手に入れよう"));
+	stringChap2.taskString.Add(TEXT("ハートの鍵を手に入れよう"));
+	stringChap2.taskString.Add(TEXT("クローバーの鍵を手に入れよう"));
+	stringChap2.taskString.Add(TEXT("思い出の写真を手に入れよう"));
+	stringChap2.taskString.Add(TEXT("エレベーターに急げ！"));
+
+	stringChap3.taskString.Add(TEXT("下の階に戻ろう"));
+	stringChap3.taskString.Add(TEXT("玄関まで急ごう！"));
 
 	clearChap1.classNum.Add(0);
 	clearChap1.classNum.Add(1);
 	clearChap1.classNum.Add(2);
-	clearChap2.classNum.Add(1);
-	clearChap3.classNum.Add(2);
+
+	clearChap2.classNum.Add(3);
+	clearChap2.classNum.Add(4);
+	clearChap2.classNum.Add(5);
+	clearChap2.classNum.Add(6);
+	clearChap2.classNum.Add(7);
+	clearChap2.classNum.Add(8);
+
+	clearChap3.classNum.Add(9);
+	clearChap3.classNum.Add(10);
 
 	tasks.Add(stringChap1);
 	tasks.Add(stringChap2);
@@ -149,4 +165,30 @@ void UTaskComponent::ToNextShowTask()
 	{
 		showTaskMax++;
 	}
+}
+
+void UTaskComponent::ResetTask()
+{
+	showTaskMin = 1;
+	showTaskMax = 1;
+	runTaskMin = 1;
+	runTaskMax = 1;
+}
+
+void UTaskComponent::SetRunTask(int min, int max)
+{
+	bool isNotNull = taskClearNum[chapter - 1].classNum.Num() > max;
+
+	if (isNotNull)
+	{
+		runTaskMin = min;
+		runTaskMax = max;
+	}
+}
+
+void UTaskComponent::AddChapter()
+{
+	ResetTask();
+
+	chapter++;
 }
