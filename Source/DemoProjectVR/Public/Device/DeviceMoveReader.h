@@ -92,6 +92,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
 	bool bInputInversion = false;
 
+	UPROPERTY()
+	UASerialLibControllerWin* SerialController = nullptr;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -102,7 +104,6 @@ private:
 	void RequestRPS();
 	int32 FindXiaoComPort() const;
 
-	UASerialLibControllerWin* SerialController = nullptr;
 	WindowsSerial* SerialInterface = nullptr;
 	FString ReceiveBuffer;
 	bool bDeviceConnected = false;
