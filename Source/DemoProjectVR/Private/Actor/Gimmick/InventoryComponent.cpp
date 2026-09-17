@@ -52,3 +52,8 @@ bool UInventoryComponent::HasItemCheck(EItemType itemType)
 
 	return flag;
 }
+
+void UInventoryComponent::ResetItems()
+{
+	inventory.Reset();
+}

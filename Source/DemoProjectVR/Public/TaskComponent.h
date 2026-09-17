@@ -57,6 +57,9 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void AddChapter();
+
+	UFUNCTION(BlueprintCallable)
+	void AllReset();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -103,6 +106,9 @@ public:
 	// タスククリアに必要なギミッククラスの番号
 	// 縦横は上記と同じ
 	TArray<FTaskClearRow> taskClearNum;
+	
+	// temp
+	TArray<FTaskClearRow> InitClearNum;
 
 	// タスククリアに必要なギミッククラス
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")

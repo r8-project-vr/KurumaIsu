@@ -60,6 +60,10 @@ void UTaskComponent::BeginPlay()
 	taskClearNum.Add(clearChap1);
 	taskClearNum.Add(clearChap2);
 	taskClearNum.Add(clearChap3);
+
+	InitClearNum.Add(clearChap1);
+	InitClearNum.Add(clearChap2);
+	InitClearNum.Add(clearChap3);
 }
 
 
@@ -195,4 +199,11 @@ void UTaskComponent::AddChapter()
 	ResetTask();
 
 	chapter++;
+}
+
+void UTaskComponent::AllReset()
+{
+	chapter = 1;
+
+	ResetTask();
 }

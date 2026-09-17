@@ -83,7 +83,7 @@ public:
 	FString LastReceivedLine;
 
 	// 車輪のデバイスのシリアル番号（確認方法：デバイスマネージャーからデバイスID確認）
-	// デバイス[3]：15bf3a9
+	// デバイス[3]：16bf3a9
 	// デバイス[4]：5c03106
 	// デバイス[5]：2c214f43
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
@@ -92,6 +92,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
 	bool bInputInversion = false;
 
+	UPROPERTY()
+	UASerialLibControllerWin* SerialController = nullptr;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -102,14 +104,13 @@ private:
 	void RequestRPS();
 	int32 FindXiaoComPort() const;
 
-	UASerialLibControllerWin* SerialController = nullptr;
 	WindowsSerial* SerialInterface = nullptr;
 	FString ReceiveBuffer;
 	bool bDeviceConnected = false;
 	u_int Command = 0x21;
 
 	float PollingTimer = 0.0f;
-	float PollingInterval = 0.01f;
+	float PollingInterval = 0.05f;
 	bool bWaitingForResponse = false;
 	EDeviceRequest CurrentRequest = EDeviceRequest::None;
 	float CurrentRPS = 0.0f;

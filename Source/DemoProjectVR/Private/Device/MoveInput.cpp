@@ -20,7 +20,6 @@ void AMoveInput::BeginPlay()
 	Super::BeginPlay();
 	
 	MoveReader->SetMoveInput(this);
-	IsRight = MoveReader->bInputInversion;
 }
 
 // Called every frame
@@ -56,7 +55,7 @@ void AMoveInput::SetValue(float newRps)
 	{
 		SustainElapsed = 0.0f;
 		DesiredRPS = newRps;
-		DEBUG_PRINT("%s : Update Detected: %lf", *GetName(), newRps);
+		//DEBUG_PRINT("%s : Update Detected: %lf", *GetName(), newRps);
 	}
 	DeviceRPS = newRps;
 	//DEBUG_PRINT("%s : RPS = %lf", *GetName(), DeviceRPS);

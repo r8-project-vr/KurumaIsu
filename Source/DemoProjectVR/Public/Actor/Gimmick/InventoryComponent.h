@@ -25,6 +25,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool HasItemCheck(EItemType itemType);
 
+	UFUNCTION(BlueprintCallable)
+	void ResetItems();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

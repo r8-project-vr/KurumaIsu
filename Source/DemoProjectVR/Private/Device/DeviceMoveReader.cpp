@@ -105,6 +105,8 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
+	SerialInterface = serial;
+
 	// コントローラーへ設定
 	SerialController->SetInterfacePt(serial);
 
@@ -225,7 +227,8 @@ void ADeviceMoveReader::ReadDataProcess()
 	{
 		if (resp.data_num < 4)
 		{
-			DEBUG_PRINT("RPS response is invalid");
+			//DEBUG_PRINT("data_num=%d command=%d", resp.data_num, resp.command);
+			//DEBUG_PRINT("%s : RPS response is invalid", *GetName());
 			return;
 		}
 
@@ -241,7 +244,7 @@ void ADeviceMoveReader::ReadDataProcess()
 		
 		if (resultTemp != 0)
 		{
-			DEBUG_PRINT("Fail to Read 0x23");
+			//DEBUG_PRINT("Fail to Read 0x23");
 			return;
 		}
 
