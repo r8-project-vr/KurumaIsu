@@ -33,6 +33,7 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// 接続が無かったら再接続処理
 	if (!bDeviceConnected)
 	{
 		bool canReConnect = ReConnectTimer <= 0.0f;
@@ -114,6 +115,8 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
+	SerialInterface = serial;
+
 	// コントローラーへ設定
 	SerialController->SetInterfacePt(serial);
 
@@ -183,6 +186,15 @@ void ADeviceMoveReader::SetMoveInput(AMoveInput* moveinput)
 void ADeviceMoveReader::SendDeviceValue()
 {
 	MoveInput->SetValue(CurrentRPS);
+}
+
+void ADeviceMoveReader::ChangeDeviceNum(EDeviceNumber changedNum)
+{
+	DisconnectDevice();
+
+	DeviceNumber = changedNum;
+
+	ConnectDevice();
 }
 
 void ADeviceMoveReader::ReadDataProcess()

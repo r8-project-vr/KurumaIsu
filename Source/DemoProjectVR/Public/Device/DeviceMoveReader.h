@@ -57,6 +57,9 @@ public:
 
 	void SendDeviceValue();
 
+	UFUNCTION(BlueprintCallable)
+	void ChangeDeviceNum(EDeviceNumber changedNum);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
 	int TargetDeviceID = 0x03;
 
@@ -97,7 +100,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
 	EDeviceNumber DeviceNumber = EDeviceNumber::no3;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|SerialNum")
 	bool bInputInversion = false;
 
 	UPROPERTY()
