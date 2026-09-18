@@ -35,7 +35,16 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 
 	if (!bDeviceConnected)
 	{
-		return;
+		bool canReConnect = ReConnectTimer <= 0.0f;
+		if (canReConnect)
+		{
+			ConnectDevice();
+			ReConnectTimer = ReConnectInterval;
+		}
+		else
+		{
+			ReConnectTimer -= DeltaTime;
+		}
 	}
 
 	PollingTimer += DeltaTime;
@@ -337,7 +346,7 @@ int32 ADeviceMoveReader::FindXiaoComPort() const
 			const FString InstanceId(InstanceIdBuffer);
 			
 			// 指定した個体だけ通す
-			if (!InstanceId.Contains(DeviceSirialNumber, ESearchCase::IgnoreCase))
+			if (!InstanceId.Contains(SerialNumberTable[(int)DeviceNumber], ESearchCase::IgnoreCase))
 			{
 				continue;
 			}
