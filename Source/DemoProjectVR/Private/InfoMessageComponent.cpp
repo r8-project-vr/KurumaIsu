@@ -85,6 +85,16 @@ void UInfoMessageComponent::SendDeviceValue(float input)
 bool UInfoMessageComponent::IsDeviceNormal()
 {
 	bool result = true;
+	
+	float range = 0.5f;
+	bool isMoved = !FMath::IsNearlyEqual(forwardInputSum, 0.0f, range);
+	isMoved &= !FMath::IsNearlyEqual(backInputSum, 0.0f, range);
+
+	if (!isMoved)
+	{
+		result = false;
+	}
+
 	if (forwardInputSum < 0 && backInputSum < 0)
 	{
 		result = false;

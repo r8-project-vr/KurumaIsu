@@ -72,7 +72,7 @@ private:
 	};
 
 	// プロセスのリスタート番号（配列のメッセージ参照用）
-	int processRestartNum = 1;
+	int processRestartNum = 0;
 	
 	float forwardInputSum = 0.0f;
 	float backInputSum = 0.0f;

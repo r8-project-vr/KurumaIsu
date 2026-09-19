@@ -204,8 +204,6 @@ void ADeviceMoveReader::ChangeDeviceNum(EDeviceNumber changedNum)
 	DisconnectDevice();
 
 	DeviceNumber = changedNum;
-
-	ConnectDevice();
 }
 
 void ADeviceMoveReader::ReadDataProcess()
