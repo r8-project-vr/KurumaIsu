@@ -24,8 +24,6 @@ void UTaskComponent::BeginPlay()
 	stringChap1.taskString.Add(TEXT("目の前のドアを開けてみよう"));
 	stringChap1.taskString.Add(TEXT("エレベーターの前まで移動しよう"));
 	stringChap1.taskString.Add(TEXT("エレベーターで下の階に向かおう"));
-	stringChap1.taskString.Add(TEXT("玄関から脱出しよう！"));
-	stringChap1.taskString.Add(TEXT("上の階に向かおう"));
 
 	stringChap2.taskString.Add(TEXT("ダイヤの鍵を手に入れよう"));
 	stringChap2.taskString.Add(TEXT("スペードの鍵を手に入れよう"));
@@ -40,8 +38,6 @@ void UTaskComponent::BeginPlay()
 	clearChap1.classNum.Add(0);
 	clearChap1.classNum.Add(1);
 	clearChap1.classNum.Add(2);
-	clearChap1.classNum.Add(11);
-	clearChap1.classNum.Add(12);
 
 	clearChap2.classNum.Add(3);
 	clearChap2.classNum.Add(4);

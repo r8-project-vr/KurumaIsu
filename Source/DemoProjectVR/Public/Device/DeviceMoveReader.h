@@ -25,6 +25,14 @@ enum class EDeviceRequest
 	RPS
 };
 
+UENUM(BlueprintType)
+enum class EDeviceNumber : uint8
+{
+	no3 UMETA(DisplayName = "no3"),
+	no4 UMETA(DisplayName = "no4"),
+	no5 UMETA(DisplayName = "no5")
+};
+
 UCLASS()
 class DEMOPROJECTVR_API ADeviceMoveReader : public AActor
 {
@@ -48,6 +56,9 @@ public:
 	void SetMoveInput(AMoveInput* moveinput);
 
 	void SendDeviceValue();
+
+	UFUNCTION(BlueprintCallable)
+	void ChangeDeviceNum(EDeviceNumber changedNum);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
 	int TargetDeviceID = 0x03;
@@ -87,11 +98,13 @@ public:
 	// デバイス[4]：5c03106
 	// デバイス[5]：2c214f43
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
-	FString DeviceSirialNumber = "5c03106";
+	EDeviceNumber DeviceNumber = EDeviceNumber::no3;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|SerialNum")
 	bool bInputInversion = false;
 
+	UPROPERTY()
+	UASerialLibControllerWin* SerialController = nullptr;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -102,7 +115,6 @@ private:
 	void RequestRPS();
 	int32 FindXiaoComPort() const;
 
-	UASerialLibControllerWin* SerialController = nullptr;
 	WindowsSerial* SerialInterface = nullptr;
 	FString ReceiveBuffer;
 	bool bDeviceConnected = false;
@@ -110,8 +122,11 @@ private:
 
 	float PollingTimer = 0.0f;
 	float PollingInterval = 0.01f;
+	float ReConnectInterval = 2.0f;
+	float ReConnectTimer = 0.0f;
 	bool bWaitingForResponse = false;
 	EDeviceRequest CurrentRequest = EDeviceRequest::None;
 	float CurrentRPS = 0.0f;
 	AMoveInput* MoveInput = nullptr;
+	TArray<FString> SerialNumberTable = { "16bf3a9", "5c03106", "2c214f43" };
 };

@@ -33,9 +33,19 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// 接続が無かったら再接続処理
 	if (!bDeviceConnected)
 	{
-		return;
+		bool canReConnect = ReConnectTimer <= 0.0f;
+		if (canReConnect)
+		{
+			ConnectDevice();
+			ReConnectTimer = ReConnectInterval;
+		}
+		else
+		{
+			ReConnectTimer -= DeltaTime;
+		}
 	}
 
 	PollingTimer += DeltaTime;
@@ -104,6 +114,8 @@ bool ADeviceMoveReader::ConnectDevice()
 		DEBUG_PRINT("Failed to create WindowsSerial");
 		return false;
 	}
+
+	SerialInterface = serial;
 
 	// コントローラーへ設定
 	SerialController->SetInterfacePt(serial);
@@ -174,6 +186,15 @@ void ADeviceMoveReader::SetMoveInput(AMoveInput* moveinput)
 void ADeviceMoveReader::SendDeviceValue()
 {
 	MoveInput->SetValue(CurrentRPS);
+}
+
+void ADeviceMoveReader::ChangeDeviceNum(EDeviceNumber changedNum)
+{
+	DisconnectDevice();
+
+	DeviceNumber = changedNum;
+
+	ConnectDevice();
 }
 
 void ADeviceMoveReader::ReadDataProcess()
@@ -337,7 +358,7 @@ int32 ADeviceMoveReader::FindXiaoComPort() const
 			const FString InstanceId(InstanceIdBuffer);
 			
 			// 指定した個体だけ通す
-			if (!InstanceId.Contains(DeviceSirialNumber, ESearchCase::IgnoreCase))
+			if (!InstanceId.Contains(SerialNumberTable[(int)DeviceNumber], ESearchCase::IgnoreCase))
 			{
 				continue;
 			}
