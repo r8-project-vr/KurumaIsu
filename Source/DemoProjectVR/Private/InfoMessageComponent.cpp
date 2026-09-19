@@ -2,6 +2,7 @@
 
 
 #include "InfoMessageComponent.h"
+#include "DebugHelper.h"
 
 // Sets default values for this component's properties
 UInfoMessageComponent::UInfoMessageComponent()
@@ -54,8 +55,7 @@ void UInfoMessageComponent::NextSequence()
 {
 	MasterSequence++;
 
-	forwardInputSum = 0.0f;
-	backInputSum = 0.0f;
+	ResetInputSum();
 	Process = 0;
 }
 
@@ -67,6 +67,7 @@ void UInfoMessageComponent::NextProcess()
 void UInfoMessageComponent::ResetProcess()
 {
 	Process = processRestartNum;
+	ResetInputSum();
 }
 
 void UInfoMessageComponent::SendDeviceValue(float input)
@@ -85,6 +86,16 @@ void UInfoMessageComponent::SendDeviceValue(float input)
 bool UInfoMessageComponent::IsDeviceNormal()
 {
 	bool result = true;
+	
+	float range = 0.5f;
+	bool isMoved = !FMath::IsNearlyEqual(forwardInputSum, 0.0f, range);
+	isMoved &= !FMath::IsNearlyEqual(backInputSum, 0.0f, range);
+
+	if (!isMoved)
+	{
+		result = false;
+	}
+
 	if (forwardInputSum < 0 && backInputSum < 0)
 	{
 		result = false;
@@ -105,4 +116,15 @@ bool UInfoMessageComponent::IsNeedInversion()
 	result = forwardInputSum < 0;
 
 	return result;
+}
+
+void UInfoMessageComponent::PrintInputValues()
+{
+	DEBUG_PRINT("前入力合計：%lf / 後ろ入力合計：%lf", forwardInputSum, backInputSum);
+}
+
+void UInfoMessageComponent::ResetInputSum()
+{
+	forwardInputSum = 0.0f;
+	backInputSum = 0.0f;
 }
