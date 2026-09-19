@@ -53,6 +53,14 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 	// まだ応答待ちなら読み取り処理
 	if (bWaitingForResponse)
 	{
+			const float PollingTimeout = 1.0f;
+	if (PollingTimer >= PollingTimeout)
+	{
+		DisconnectDevice();
+		PollingTimer = 0.0f;
+		return;
+	}
+
 		ReadDataProcess();
 		return;
 	}
@@ -132,7 +140,9 @@ bool ADeviceMoveReader::ConnectDevice()
 	DEBUG_PRINT("Connected to Move device on COM%d", ComPort);
 
 	bDeviceConnected = true;
-
+	PollingTimer = 0.0f;
+	ReConnectTimer = 0.0f;
+	bWaitingForResponse = false;
 	return true;
 #else
 	DEBUG_PRINT("DeviceMoveReader currently supports Windows only.");
@@ -157,6 +167,7 @@ void ADeviceMoveReader::DisconnectDevice()
 		delete SerialInterface;
 		SerialInterface = nullptr;
 	}
+	bDeviceConnected = false;
 
 	DEBUG_PRINT("Move device disconnected.");
 #endif
@@ -246,7 +257,7 @@ void ADeviceMoveReader::ReadDataProcess()
 	{
 		if (resp.data_num < 4)
 		{
-			DEBUG_PRINT("RPS response is invalid");
+			//DEBUG_PRINT("RPS response is invalid");
 			return;
 		}
 
@@ -263,6 +274,7 @@ void ADeviceMoveReader::ReadDataProcess()
 		if (resultTemp != 0)
 		{
 			DEBUG_PRINT("Fail to Read 0x23");
+			DisconnectDevice();
 			return;
 		}
 

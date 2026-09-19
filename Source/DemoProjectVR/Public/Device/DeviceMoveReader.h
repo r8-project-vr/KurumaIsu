@@ -123,7 +123,7 @@ private:
 	u_int Command = 0x21;
 
 	float PollingTimer = 0.0f;
-	float PollingInterval = 0.01f;
+	float PollingInterval = 0.05f;
 	float ReConnectInterval = 2.0f;
 	float ReConnectTimer = 0.0f;
 	bool bWaitingForResponse = false;
