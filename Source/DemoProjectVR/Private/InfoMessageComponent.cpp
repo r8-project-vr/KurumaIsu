@@ -64,6 +64,11 @@ void UInfoMessageComponent::NextProcess()
 	Process++;
 }
 
+void UInfoMessageComponent::ResetProcess()
+{
+	Process = processRestartNum;
+}
+
 void UInfoMessageComponent::SendDeviceValue(float input)
 {
 	bool isForward = Process == 1;
