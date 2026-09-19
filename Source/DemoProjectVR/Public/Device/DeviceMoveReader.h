@@ -30,7 +30,9 @@ enum class EDeviceNumber : uint8
 {
 	no3 UMETA(DisplayName = "no3"),
 	no4 UMETA(DisplayName = "no4"),
-	no5 UMETA(DisplayName = "no5")
+	no5 UMETA(DisplayName = "no5"),
+	no1 UMETA(DisplayName = "no1"),
+	no2 UMETA(DisplayName = "no2")
 };
 
 UCLASS()
@@ -121,12 +123,14 @@ private:
 	u_int Command = 0x21;
 
 	float PollingTimer = 0.0f;
-	float PollingInterval = 0.01f;
+	float PollingInterval = 0.05f;
 	float ReConnectInterval = 2.0f;
 	float ReConnectTimer = 0.0f;
 	bool bWaitingForResponse = false;
 	EDeviceRequest CurrentRequest = EDeviceRequest::None;
 	float CurrentRPS = 0.0f;
 	AMoveInput* MoveInput = nullptr;
-	TArray<FString> SerialNumberTable = { "16bf3a9", "5c03106", "2c214f43" };
+
+	// デバイスのシリアル番号：[3][4][5][1][2]
+	TArray<FString> SerialNumberTable = { "16bf3a9", "5c03106", "2c214f43", "25be1a67", "2c434751"};
 };

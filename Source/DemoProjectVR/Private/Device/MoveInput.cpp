@@ -20,7 +20,6 @@ void AMoveInput::BeginPlay()
 	Super::BeginPlay();
 	
 	MoveReader->SetMoveInput(this);
-	IsRight = MoveReader->bInputInversion;
 }
 
 // Called every frame
