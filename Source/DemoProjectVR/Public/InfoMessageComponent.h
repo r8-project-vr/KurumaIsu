@@ -31,6 +31,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void NextProcess();
 
+	UFUNCTION(BlueprintCallable)
+	void ResetProcess();
+
 	// デバイスの入力値を受け取る（入力正誤・反転に用いる）
 	UFUNCTION(BlueprintCallable)
 	void SendDeviceValue(float input);
