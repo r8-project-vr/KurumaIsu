@@ -46,6 +46,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool IsNeedInversion();
 
+	UFUNCTION(BlueprintCallable)
+	void PrintInputValues();
+
+	UFUNCTION(BlueprintCallable)
+	void ResetInputSum();
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
