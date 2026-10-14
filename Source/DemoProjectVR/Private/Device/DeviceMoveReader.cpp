@@ -50,17 +50,23 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 
 	PollingTimer += DeltaTime;
 
+	//DEBUG_PRINT("=====================================");
+	//DEBUG_PRINT("PollingTimer: % lf", PollingTimer);
+
 	// まだ応答待ちなら読み取り処理
 	if (bWaitingForResponse)
 	{
-			const float PollingTimeout = 1.0f;
-	if (PollingTimer >= PollingTimeout)
-	{
-		DisconnectDevice();
-		PollingTimer = 0.0f;
-		return;
-	}
+		const float PollingTimeout = 0.5f;
+		if (PollingTimer >= PollingTimeout)
+		{
+			//DEBUG_PRINT("Polling Timeout");
 
+			DisconnectDevice();
+			PollingTimer = 0.0f;
+			return;
+		}
+
+		//DEBUG_PRINT("Try Read Data");
 		ReadDataProcess();
 		return;
 	}
@@ -68,14 +74,17 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 	// ポーリング周期前なら何もしない
 	if (PollingTimer < PollingInterval)
 	{
+		//DEBUG_PRINT("Waiting Polling");
 		return;
 	}
 
 	PollingTimer = 0.0f;
 
+	//DEBUG_PRINT("Request Updated");
+
 	//// まず更新フラグを要求
-	//RequestUpdateFlag();
-	RequestRPS();
+	RequestUpdate();
+	//RequestRPS();
 }
 
 bool ADeviceMoveReader::ConnectDevice()
@@ -221,12 +230,53 @@ void ADeviceMoveReader::ReadDataProcess()
 	{
 		return;
 	}
-
-	//DEBUG_PRINT("Response received. data_num = %d", resp.data_num);
+	DEBUG_PRINT("%d", resp.data[0]);
 
 	bWaitingForResponse = false;
 
+
+	// 受け取った2進数をデバイスの情報に変換
+	// 
+	// 読み取り順序
+	//  A | B | V
+	// ---|---|---
+	//  0 | 0 | 0
+	//  1 | 0 | 1
+	//  1 | 1 | 3
+	//  0 | 1 | 2
+	switch (resp.data[0])
+	{
+	case 0:
+		bDeviceA = false;
+		bDeviceB = false;
+	case 1:
+		bDeviceA = true;
+		bDeviceB = false;
+	case 2:
+		bDeviceA = false;
+		bDeviceB = true;
+	case 3:
+		bDeviceA = true;
+		bDeviceB = true;
+	}
+
+
+
+	if (resp.data_num != 1)
+	{
+		DEBUG_PRINT("RPS response is invalid -> data num : %d", resp.data_num);
+		return;
+	}
+
+	SendDeviceValue();
+
+	CurrentRequest = EDeviceRequest::None;
+
+	return;
+
+	// デバイスの仕様変更に伴い変更
 	// 更新フラグの応答
+	/*
 	if (CurrentRequest == EDeviceRequest::UpdateFlag)
 	{
 		if (resp.data_num < 1)
@@ -249,18 +299,19 @@ void ADeviceMoveReader::ReadDataProcess()
 
 		return;
 	}
+	*/
 
+	// デバイスの仕様変更に伴い変更
+	/*
+	
 	// RPSの応答
 	if (CurrentRequest == EDeviceRequest::RPS)
 	{
-		if (resp.data_num < 4)
-		{
-			//DEBUG_PRINT("RPS response is invalid");
-			return;
-		}
+
 
 		// ビッグエンディアンでint32に変換
 		int32 rawRPS = (static_cast<int32>(resp.data[0]) << 24) | (static_cast<int32>(resp.data[1]) << 16) | (static_cast<int32>(resp.data[2]) << 8) | static_cast<int32>(resp.data[3]);
+
 
 		// 100倍されているので戻す
 		float RPS = static_cast<float>(rawRPS) / 100.0f;
@@ -293,33 +344,42 @@ void ADeviceMoveReader::ReadDataProcess()
 		//DEBUG_PRINT("RPS = %lf", RPS);
 
 		CurrentRPS = RPS;
-
-		SendDeviceValue();
-
-		CurrentRequest = EDeviceRequest::None;
-
-		return;
 	}
+	*/
 }
 
-void ADeviceMoveReader::RequestUpdateFlag()
+// デバイスの仕様変更に伴い変更
+bool ADeviceMoveReader::RequestUpdate()
 {
 	if (SerialController == nullptr)
 	{
-		return;
+		// DEBUG_PRINT("RequestUpdate failed : SerialController is nullptr");
+		return false;
 	}
 
 	SerialController->WriteData(0x20);
 
+	ASerialDataStruct::ASerialData resp;
+
+	const int result = SerialController->ReadData(&resp);
+
+	DEBUG_PRINT("Request Update Result => %d", result);
+
 	bWaitingForResponse = true;
 
-	CurrentRequest = EDeviceRequest::UpdateFlag;
+	if (result != 0)
+	{
+		return false;
+	}
 
-	DEBUG_PRINT("Request Update Flag");
+	return true;
 }
 
+// デバイスの仕様変更に伴い利用停止
 void ADeviceMoveReader::RequestRPS()
 {
+	// 利用停止
+
 	if (SerialController == nullptr)
 	{
 		return;
