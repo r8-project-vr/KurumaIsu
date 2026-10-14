@@ -2,6 +2,7 @@
 
 
 #include "ASerialLibControllerWin.h"
+#include "../../../../../Source/DemoProjectVR/Public/DebugHelper.h"
 
 UASerialLibControllerWin::UASerialLibControllerWin()
 {
@@ -146,6 +147,7 @@ int UASerialLibControllerWin::ReadDataProcess(ASerialDataStruct::ASerialData* re
 }
 
 int UASerialLibControllerWin::ReadData(ASerialDataStruct::ASerialData* read_data_buf) {
+
     if (m_inteface->GetState() == false) {
         return -1;
     }

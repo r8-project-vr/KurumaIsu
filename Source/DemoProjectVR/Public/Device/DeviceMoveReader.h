@@ -113,7 +113,7 @@ protected:
 
 private:
 	void ReadDataProcess();
-	void RequestUpdateFlag();
+	bool RequestUpdate();
 	void RequestRPS();
 	int32 FindXiaoComPort() const;
 
@@ -133,4 +133,11 @@ private:
 
 	// デバイスのシリアル番号：[3][4][5][1][2]
 	TArray<FString> SerialNumberTable = { "16bf3a9", "5c03106", "2c214f43", "25be1a67", "2c434751"};
+
+	// デバイスの値
+	// 左車輪 : A -> B 
+	// 右車輪 : B -> A
+	// 読み取り[黒] : false
+	// 読み取り[白] : true
+	bool bDeviceA = false, bDeviceB = false;
 };
