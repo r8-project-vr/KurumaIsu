@@ -35,6 +35,32 @@ enum class EDeviceNumber : uint8
 	no2 UMETA(DisplayName = "no2")
 };
 
+
+struct LPF
+{
+public:
+	const float Cutoff;
+	float Current;
+
+public:
+	LPF(float Cutoff)
+		: Cutoff(Cutoff)
+		, Current(0.0f)
+	{
+	}
+
+public:
+	void Update(float New, float DeltaTime)
+	{
+		Current += (New - Current) * exp(-DeltaTime * Cutoff);
+	}
+
+	float GetValue()
+	{
+		return Current;
+	}
+};
+
 UCLASS()
 class DEMOPROJECTVR_API ADeviceMoveReader : public AActor
 {
@@ -124,7 +150,7 @@ private:
 
 	float PollingTimer = 0.0f;
 	float PollingInterval = 0.05f;
-	float ReConnectInterval = 2.0f;
+	float ReConnectInterval = 5.0f;
 	float ReConnectTimer = 0.0f;
 	bool bWaitingForResponse = false;
 	EDeviceRequest CurrentRequest = EDeviceRequest::None;
@@ -140,4 +166,11 @@ private:
 	// 読み取り[黒] : false
 	// 読み取り[白] : true
 	bool bDeviceA = false, bDeviceB = false;
+	float fDeviceCurrentAngle = 0.0f;
+	const float fDeviceCorrectionRate = 10.0f;
+	int iRecentStateRotation = 0;
+
+	private:
+		// 黒色の領域の割合（０～１）
+		const float fMarkRatio = 0.5f;
 };

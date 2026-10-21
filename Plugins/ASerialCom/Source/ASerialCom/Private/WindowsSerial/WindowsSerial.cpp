@@ -1,7 +1,9 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "WindowsSerial/WindowsSerial.h"
+#include "../../../../../../Source/DemoProjectVR/Public/DebugHelper.h"
+
 
 // public
 WindowsSerial::WindowsSerial(int baudrate) { m_baudrate = baudrate; }
@@ -96,6 +98,7 @@ int WindowsSerial::available(void)
 
 int WindowsSerial::read(void)
 {
+
     if (GetState() == false) {
         return -1;
     }

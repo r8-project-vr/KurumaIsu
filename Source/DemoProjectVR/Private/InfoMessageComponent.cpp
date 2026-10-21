@@ -105,6 +105,8 @@ bool UInfoMessageComponent::IsDeviceNormal()
 		result = false;
 	}
 
+	DEBUG_PRINT("%s | forward : %lf / back : %lf", *GetName(), forwardInputSum, backInputSum);
+
 	return result;
 }
 
