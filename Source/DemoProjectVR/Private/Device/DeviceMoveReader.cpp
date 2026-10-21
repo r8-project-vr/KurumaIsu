@@ -4,10 +4,37 @@
 #include "Device/DeviceMoveReader.h"
 #include "Device/MoveInput.h"
 
+int CalcStateIndex(bool bDeviceA, bool bDeviceB)
+{
+	// 受け取った2進数をデバイスの情報に変換
+	// 
+	// 読み取り順序
+	//  A | B | V
+	// ---|---|---
+	//  0 | 0 | 0
+	//  1 | 0 | 1
+	//  1 | 1 | 3
+	//  0 | 1 | 2
+	if (bDeviceA)
+	{
+		if (bDeviceB)
+		{
+			return 3;
+		}
+		return 1;
+	}
+	if (bDeviceB)
+	{
+		return 2;
+	}
+	return 0;
+}
+
+
 // Sets default values
 ADeviceMoveReader::ADeviceMoveReader()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 }
@@ -48,6 +75,14 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 		}
 	}
 
+	float fCorrectedAngularDelta = -fDeviceCurrentAngle * (1.0f - exp(-DeltaTime * fDeviceCorrectionRate));
+	fDeviceCurrentAngle += fCorrectedAngularDelta;
+	if (bInputInversion)
+	{
+		fCorrectedAngularDelta *= -1;
+	}
+		MoveInput->SetValue(fCorrectedAngularDelta * 300);
+
 	PollingTimer += DeltaTime;
 
 	//DEBUG_PRINT("=====================================");
@@ -56,7 +91,7 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 	// まだ応答待ちなら読み取り処理
 	if (bWaitingForResponse)
 	{
-		const float PollingTimeout = 0.5f;
+		const float PollingTimeout = 5.0f;
 		if (PollingTimer >= PollingTimeout)
 		{
 			//DEBUG_PRINT("Polling Timeout");
@@ -118,11 +153,11 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
-	DEBUG_PRINT("SerialController created.");
+	DEBUG_PRINT("%s | SerialController created.", *GetName());
 
 	SerialController->Initialize(TargetDeviceID, 0x01, 0x01);
 
-	DEBUG_PRINT("SerialController initialized.");
+	DEBUG_PRINT("%s | SerialController initialized.", *GetName());
 
 	WindowsSerial* serial = new WindowsSerial();
 
@@ -146,7 +181,7 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
-	DEBUG_PRINT("Connected to Move device on COM%d", ComPort);
+	DEBUG_PRINT("%s | Connected to Move device on COM%d", *GetName(), ComPort);
 
 	bDeviceConnected = true;
 	PollingTimer = 0.0f;
@@ -178,7 +213,7 @@ void ADeviceMoveReader::DisconnectDevice()
 	}
 	bDeviceConnected = false;
 
-	DEBUG_PRINT("Move device disconnected.");
+	DEBUG_PRINT("%s | Move device disconnected.", *GetName());
 #endif
 	ReceiveBuffer.Reset();
 }
@@ -230,7 +265,7 @@ void ADeviceMoveReader::ReadDataProcess()
 	{
 		return;
 	}
-	DEBUG_PRINT("%d", resp.data[0]);
+	DEBUG_PRINT("%s | %d", *GetName(), resp.data[0]);
 
 	bWaitingForResponse = false;
 
@@ -244,23 +279,72 @@ void ADeviceMoveReader::ReadDataProcess()
 	//  1 | 0 | 1
 	//  1 | 1 | 3
 	//  0 | 1 | 2
+
+	bool bDeviceNewA = false;
+	bool bDeviceNewB = false;
 	switch (resp.data[0])
 	{
 	case 0:
-		bDeviceA = false;
-		bDeviceB = false;
+		bDeviceNewA = false;
+		bDeviceNewB = false;
+		break;
 	case 1:
-		bDeviceA = true;
-		bDeviceB = false;
+		bDeviceNewA = true;
+		bDeviceNewB = false;
+		break;
 	case 2:
-		bDeviceA = false;
-		bDeviceB = true;
+		bDeviceNewA = false;
+		bDeviceNewB = true;
+		break;
 	case 3:
-		bDeviceA = true;
-		bDeviceB = true;
+		bDeviceNewA = true;
+		bDeviceNewB = true;
+		break;
 	}
-
-
+	
+	const float fAngleToTransitionTable[4] =
+	{
+		fMarkRatio / 2.0f, 
+		(1.0f - fMarkRatio) / 2.0f,
+		(1.0f - fMarkRatio) / 2.0f, 
+		fMarkRatio / 2.0f,
+	};
+	const int XX = iRecentStateRotation * 2;
+	int iStateRotationTable[4][4] =
+	{
+		// New | Old
+		/*        00, 01, 10, 11,  */
+		/* 00 */{ +0, +1, -1, XX, }, 
+		/* 01 */{ -1, +0, XX, +1, }, 
+		/* 10 */{ +1, XX, +0, -1, }, 
+		/* 11 */{ XX, -1, +1, +0, }, 
+	};
+	int iOldState = CalcStateIndex(bDeviceA, bDeviceB);
+	int iNewState = CalcStateIndex(bDeviceNewA, bDeviceNewB);
+	int iStateRotation = iStateRotationTable[iNewState][iOldState];
+	if (iStateRotation > 0)
+	{
+		for (int i = 0; i < iStateRotation; i++)
+		{
+			fDeviceCurrentAngle += fAngleToTransitionTable[(i + iOldState + 4) % 4];
+		}
+	}
+	else
+	{
+		for (int i = -1; i >= iStateRotation; i--)
+		{
+			fDeviceCurrentAngle -= fAngleToTransitionTable[(i + iOldState + 4) % 4];
+		}
+	}
+	if (iStateRotation != XX && iStateRotation != 0)
+	{
+		iRecentStateRotation = iStateRotation;
+	}
+	// DEBUG_PRINT("%s | Rotation: %d, Recent: %d", *GetName(), iStateRotation, iRecentStateRotation)
+	// DEBUG_PRINT("%s | A: %d, B: %d, NewA: %d, NewB: %d", *GetName(), bDeviceA ? 1 : 0, bDeviceB ? 1 : 0, bDeviceNewA ? 1 : 0, bDeviceNewB ? 1 : 0);
+	// DEBUG_PRINT("%s | State: %d, Current: %lf", *GetName(), iNewState, fDeviceCurrentAngle);
+	bDeviceA = bDeviceNewA;
+	bDeviceB = bDeviceNewB;
 
 	if (resp.data_num != 1)
 	{
@@ -289,7 +373,7 @@ void ADeviceMoveReader::ReadDataProcess()
 		uint8 UpdateFlag = resp.data[0];
 
 		//DEBUG_PRINT("Update Flag = %d", UpdateFlag);
-		
+
 		CurrentRequest = EDeviceRequest::None;
 
 		if (UpdateFlag == 1)
@@ -303,7 +387,7 @@ void ADeviceMoveReader::ReadDataProcess()
 
 	// デバイスの仕様変更に伴い変更
 	/*
-	
+
 	// RPSの応答
 	if (CurrentRequest == EDeviceRequest::RPS)
 	{
@@ -319,7 +403,7 @@ void ADeviceMoveReader::ReadDataProcess()
 		// 正負の取得
 		SerialController->WriteData(0x23);
 		const int resultTemp = SerialController->ReadData(&resp);
-		
+
 		if (resultTemp != 0)
 		{
 			DEBUG_PRINT("Fail to Read 0x23");
@@ -363,7 +447,7 @@ bool ADeviceMoveReader::RequestUpdate()
 
 	const int result = SerialController->ReadData(&resp);
 
-	DEBUG_PRINT("Request Update Result => %d", result);
+	DEBUG_PRINT("%s | Request Update Result => %d", *GetName(), result);
 
 	bWaitingForResponse = true;
 
@@ -426,7 +510,7 @@ int32 ADeviceMoveReader::FindXiaoComPort() const
 			}
 
 			const FString InstanceId(InstanceIdBuffer);
-			
+
 			// 指定した個体だけ通す
 			if (!InstanceId.Contains(SerialNumberTable[(int)DeviceNumber], ESearchCase::IgnoreCase))
 			{

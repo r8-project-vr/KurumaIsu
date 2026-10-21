@@ -78,6 +78,7 @@ ConnectResult UASerialLibControllerWin::ConnectDevice(int COM_num)
 }
 
 ConnectResult UASerialLibControllerWin::AutoConnectDevice() {
+
     if (GetConnectionState() == true) {
         return ConnectResult::Fail;
     }
@@ -129,6 +130,7 @@ void UASerialLibControllerWin::SetInterfacePt(WindowsSerial* interface_pt) { m_i
 
 int UASerialLibControllerWin::ReadDataProcess(ASerialDataStruct::ASerialData* read_data_buf)
 {
+
     if (m_inteface->GetState() == false) {
         return -1;
     }
@@ -154,14 +156,16 @@ int UASerialLibControllerWin::ReadData(ASerialDataStruct::ASerialData* read_data
 
     constexpr clock_t time_out = 50;
 
+	bool success_flag = false;
     bool time_out_flag = false;
     bool error_flag = false;
 
     clock_t time_buf = clock();
-    while (1) {
+    for(int i = 0; i < 10; i++) {
         int st = ReadDataProcess(read_data_buf);
 
         if (st == 1) {
+			success_flag = true;
             break;
         }
         else if (st == -1) {
@@ -174,6 +178,10 @@ int UASerialLibControllerWin::ReadData(ASerialDataStruct::ASerialData* read_data
             break;
         }
     }
+	if (success_flag == false)
+	{
+		return -3;
+	}
 
     if (error_flag == true) {    //読み取りエラー
         return -1;
