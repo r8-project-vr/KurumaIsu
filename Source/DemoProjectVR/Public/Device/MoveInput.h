@@ -41,14 +41,4 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Setting")
 	bool IsRight = false;
 
-private:
-
-	const float DecayFactor = 10.0f;
-
-	float DesiredRPS;
-	float ActualRPS;
-
-	float SustainElapsed;
-	const float SustainTimeout = 1.0f;
-	const float TimeoutDecay = 8.0f;
 };

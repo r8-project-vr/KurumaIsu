@@ -4,10 +4,37 @@
 #include "Device/DeviceMoveReader.h"
 #include "Device/MoveInput.h"
 
+int CalcStateIndex(bool bDeviceA, bool bDeviceB)
+{
+	// 受け取った2進数をデバイスの情報に変換
+	// 
+	// 読み取り順序
+	//  A | B | V
+	// ---|---|---
+	//  0 | 0 | 0
+	//  1 | 0 | 1
+	//  1 | 1 | 3
+	//  0 | 1 | 2
+	if (bDeviceA)
+	{
+		if (bDeviceB)
+		{
+			return 3;
+		}
+		return 1;
+	}
+	if (bDeviceB)
+	{
+		return 2;
+	}
+	return 0;
+}
+
+
 // Sets default values
 ADeviceMoveReader::ADeviceMoveReader()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 }
@@ -48,19 +75,33 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 		}
 	}
 
+	float fCorrectedAngularDelta = -fDeviceCurrentAngle * (1.0f - exp(-DeltaTime * fDeviceCorrectionRate));
+	fDeviceCurrentAngle += fCorrectedAngularDelta;
+	if (bInputInversion)
+	{
+		fCorrectedAngularDelta *= -1;
+	}
+		MoveInput->SetValue(fCorrectedAngularDelta * 300);
+
 	PollingTimer += DeltaTime;
+
+	//DEBUG_PRINT("=====================================");
+	//DEBUG_PRINT("PollingTimer: % lf", PollingTimer);
 
 	// まだ応答待ちなら読み取り処理
 	if (bWaitingForResponse)
 	{
-			const float PollingTimeout = 1.0f;
-	if (PollingTimer >= PollingTimeout)
-	{
-		DisconnectDevice();
-		PollingTimer = 0.0f;
-		return;
-	}
+		const float PollingTimeout = 5.0f;
+		if (PollingTimer >= PollingTimeout)
+		{
+			//DEBUG_PRINT("Polling Timeout");
 
+			DisconnectDevice();
+			PollingTimer = 0.0f;
+			return;
+		}
+
+		//DEBUG_PRINT("Try Read Data");
 		ReadDataProcess();
 		return;
 	}
@@ -68,14 +109,17 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 	// ポーリング周期前なら何もしない
 	if (PollingTimer < PollingInterval)
 	{
+		//DEBUG_PRINT("Waiting Polling");
 		return;
 	}
 
 	PollingTimer = 0.0f;
 
+	//DEBUG_PRINT("Request Updated");
+
 	//// まず更新フラグを要求
-	//RequestUpdateFlag();
-	RequestRPS();
+	RequestUpdate();
+	//RequestRPS();
 }
 
 bool ADeviceMoveReader::ConnectDevice()
@@ -109,11 +153,11 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
-	DEBUG_PRINT("SerialController created.");
+	DEBUG_PRINT("%s | SerialController created.", *GetName());
 
 	SerialController->Initialize(TargetDeviceID, 0x01, 0x01);
 
-	DEBUG_PRINT("SerialController initialized.");
+	DEBUG_PRINT("%s | SerialController initialized.", *GetName());
 
 	WindowsSerial* serial = new WindowsSerial();
 
@@ -137,7 +181,7 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
-	DEBUG_PRINT("Connected to Move device on COM%d", ComPort);
+	DEBUG_PRINT("%s | Connected to Move device on COM%d", *GetName(), ComPort);
 
 	bDeviceConnected = true;
 	PollingTimer = 0.0f;
@@ -169,7 +213,7 @@ void ADeviceMoveReader::DisconnectDevice()
 	}
 	bDeviceConnected = false;
 
-	DEBUG_PRINT("Move device disconnected.");
+	DEBUG_PRINT("%s | Move device disconnected.", *GetName());
 #endif
 	ReceiveBuffer.Reset();
 }
@@ -221,12 +265,102 @@ void ADeviceMoveReader::ReadDataProcess()
 	{
 		return;
 	}
-
-	//DEBUG_PRINT("Response received. data_num = %d", resp.data_num);
+	DEBUG_PRINT("%s | %d", *GetName(), resp.data[0]);
 
 	bWaitingForResponse = false;
 
+
+	// 受け取った2進数をデバイスの情報に変換
+	// 
+	// 読み取り順序
+	//  A | B | V
+	// ---|---|---
+	//  0 | 0 | 0
+	//  1 | 0 | 1
+	//  1 | 1 | 3
+	//  0 | 1 | 2
+
+	bool bDeviceNewA = false;
+	bool bDeviceNewB = false;
+	switch (resp.data[0])
+	{
+	case 0:
+		bDeviceNewA = false;
+		bDeviceNewB = false;
+		break;
+	case 1:
+		bDeviceNewA = true;
+		bDeviceNewB = false;
+		break;
+	case 2:
+		bDeviceNewA = false;
+		bDeviceNewB = true;
+		break;
+	case 3:
+		bDeviceNewA = true;
+		bDeviceNewB = true;
+		break;
+	}
+	
+	const float fAngleToTransitionTable[4] =
+	{
+		fMarkRatio / 2.0f, 
+		(1.0f - fMarkRatio) / 2.0f,
+		(1.0f - fMarkRatio) / 2.0f, 
+		fMarkRatio / 2.0f,
+	};
+	const int XX = iRecentStateRotation * 2;
+	int iStateRotationTable[4][4] =
+	{
+		// New | Old
+		/*        00, 01, 10, 11,  */
+		/* 00 */{ +0, +1, -1, XX, }, 
+		/* 01 */{ -1, +0, XX, +1, }, 
+		/* 10 */{ +1, XX, +0, -1, }, 
+		/* 11 */{ XX, -1, +1, +0, }, 
+	};
+	int iOldState = CalcStateIndex(bDeviceA, bDeviceB);
+	int iNewState = CalcStateIndex(bDeviceNewA, bDeviceNewB);
+	int iStateRotation = iStateRotationTable[iNewState][iOldState];
+	if (iStateRotation > 0)
+	{
+		for (int i = 0; i < iStateRotation; i++)
+		{
+			fDeviceCurrentAngle += fAngleToTransitionTable[(i + iOldState + 4) % 4];
+		}
+	}
+	else
+	{
+		for (int i = -1; i >= iStateRotation; i--)
+		{
+			fDeviceCurrentAngle -= fAngleToTransitionTable[(i + iOldState + 4) % 4];
+		}
+	}
+	if (iStateRotation != XX && iStateRotation != 0)
+	{
+		iRecentStateRotation = iStateRotation;
+	}
+	// DEBUG_PRINT("%s | Rotation: %d, Recent: %d", *GetName(), iStateRotation, iRecentStateRotation)
+	// DEBUG_PRINT("%s | A: %d, B: %d, NewA: %d, NewB: %d", *GetName(), bDeviceA ? 1 : 0, bDeviceB ? 1 : 0, bDeviceNewA ? 1 : 0, bDeviceNewB ? 1 : 0);
+	// DEBUG_PRINT("%s | State: %d, Current: %lf", *GetName(), iNewState, fDeviceCurrentAngle);
+	bDeviceA = bDeviceNewA;
+	bDeviceB = bDeviceNewB;
+
+	if (resp.data_num != 1)
+	{
+		DEBUG_PRINT("RPS response is invalid -> data num : %d", resp.data_num);
+		return;
+	}
+
+	SendDeviceValue();
+
+	CurrentRequest = EDeviceRequest::None;
+
+	return;
+
+	// デバイスの仕様変更に伴い変更
 	// 更新フラグの応答
+	/*
 	if (CurrentRequest == EDeviceRequest::UpdateFlag)
 	{
 		if (resp.data_num < 1)
@@ -239,7 +373,7 @@ void ADeviceMoveReader::ReadDataProcess()
 		uint8 UpdateFlag = resp.data[0];
 
 		//DEBUG_PRINT("Update Flag = %d", UpdateFlag);
-		
+
 		CurrentRequest = EDeviceRequest::None;
 
 		if (UpdateFlag == 1)
@@ -249,18 +383,19 @@ void ADeviceMoveReader::ReadDataProcess()
 
 		return;
 	}
+	*/
+
+	// デバイスの仕様変更に伴い変更
+	/*
 
 	// RPSの応答
 	if (CurrentRequest == EDeviceRequest::RPS)
 	{
-		if (resp.data_num < 4)
-		{
-			//DEBUG_PRINT("RPS response is invalid");
-			return;
-		}
+
 
 		// ビッグエンディアンでint32に変換
 		int32 rawRPS = (static_cast<int32>(resp.data[0]) << 24) | (static_cast<int32>(resp.data[1]) << 16) | (static_cast<int32>(resp.data[2]) << 8) | static_cast<int32>(resp.data[3]);
+
 
 		// 100倍されているので戻す
 		float RPS = static_cast<float>(rawRPS) / 100.0f;
@@ -268,7 +403,7 @@ void ADeviceMoveReader::ReadDataProcess()
 		// 正負の取得
 		SerialController->WriteData(0x23);
 		const int resultTemp = SerialController->ReadData(&resp);
-		
+
 		if (resultTemp != 0)
 		{
 			DEBUG_PRINT("Fail to Read 0x23");
@@ -293,33 +428,42 @@ void ADeviceMoveReader::ReadDataProcess()
 		//DEBUG_PRINT("RPS = %lf", RPS);
 
 		CurrentRPS = RPS;
-
-		SendDeviceValue();
-
-		CurrentRequest = EDeviceRequest::None;
-
-		return;
 	}
+	*/
 }
 
-void ADeviceMoveReader::RequestUpdateFlag()
+// デバイスの仕様変更に伴い変更
+bool ADeviceMoveReader::RequestUpdate()
 {
 	if (SerialController == nullptr)
 	{
-		return;
+		// DEBUG_PRINT("RequestUpdate failed : SerialController is nullptr");
+		return false;
 	}
 
 	SerialController->WriteData(0x20);
 
+	ASerialDataStruct::ASerialData resp;
+
+	const int result = SerialController->ReadData(&resp);
+
+	DEBUG_PRINT("%s | Request Update Result => %d", *GetName(), result);
+
 	bWaitingForResponse = true;
 
-	CurrentRequest = EDeviceRequest::UpdateFlag;
+	if (result != 0)
+	{
+		return false;
+	}
 
-	DEBUG_PRINT("Request Update Flag");
+	return true;
 }
 
+// デバイスの仕様変更に伴い利用停止
 void ADeviceMoveReader::RequestRPS()
 {
+	// 利用停止
+
 	if (SerialController == nullptr)
 	{
 		return;
@@ -366,7 +510,7 @@ int32 ADeviceMoveReader::FindXiaoComPort() const
 			}
 
 			const FString InstanceId(InstanceIdBuffer);
-			
+
 			// 指定した個体だけ通す
 			if (!InstanceId.Contains(SerialNumberTable[(int)DeviceNumber], ESearchCase::IgnoreCase))
 			{
