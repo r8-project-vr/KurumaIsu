@@ -106,12 +106,15 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 		return;
 	}
 
+	// デバイス側の更新レートに合わせて変更する（現在データは送られてきた全てのデータに応答する）
+	/*
 	// ポーリング周期前なら何もしない
 	if (PollingTimer < PollingInterval)
 	{
 		//DEBUG_PRINT("Waiting Polling");
 		return;
 	}
+	*/
 
 	PollingTimer = 0.0f;
 
