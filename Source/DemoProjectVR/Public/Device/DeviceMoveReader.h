@@ -40,25 +40,46 @@ struct LPF
 {
 public:
 	const float Cutoff;
+	const float QFactor;
 	float Current;
 
+	float za1, za2, zb1, zb2;
+
 public:
-	LPF(float Cutoff)
+	LPF(float Cutoff, float QFactor)
 		: Cutoff(Cutoff)
 		, Current(0.0f)
+		, QFactor(QFactor)
 	{
 	}
 
 public:
 	void Update(float New, float DeltaTime)
 	{
-		Current += (New - Current) * exp(-DeltaTime * Cutoff);
+		float w = Cutoff * DeltaTime;
+		float w2 = w * w;
+		float wPerQ = w / QFactor;
+		float f = 1 + wPerQ + w2;
+		float a1 = (w2 - 1) * 2 / f;
+		float a2 = (1 - wPerQ + w2) / f;
+		float b0 = w2;
+		float b1 = w2 * 2;
+		float b2 = w2;
+
+		float fir = New * b0 + zb1 * b1 + zb2 * b2;
+		float iir = -za1 * a1 - za2 * a2;
+		Current = fir + iir;
+		za2 = za1;
+		za1 = Current;
+		zb2 = zb1;
+		zb1 = New;
 	}
 
 	float GetValue()
 	{
 		return Current;
 	}
+
 };
 
 UCLASS()
@@ -131,6 +152,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|SerialNum")
 	bool bInputInversion = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|SerialNum")
+	float fMoveSpeed = 100.0f;
+
 	UPROPERTY()
 	UASerialLibControllerWin* SerialController = nullptr;
 protected:
@@ -150,7 +174,7 @@ private:
 
 	float PollingTimer = 0.0f;
 	float PollingInterval = 0.05f;
-	float ReConnectInterval = 5.0f;
+	float ReConnectInterval = 2.0f;
 	float ReConnectTimer = 0.0f;
 	bool bWaitingForResponse = false;
 	EDeviceRequest CurrentRequest = EDeviceRequest::None;
@@ -167,7 +191,8 @@ private:
 	// 読み取り[白] : true
 	bool bDeviceA = false, bDeviceB = false;
 	float fDeviceCurrentAngle = 0.0f;
-	const float fDeviceCorrectionRate = 10.0f;
+	float fDeviceSmoothedAngle = 0.0f;
+	LPF InputSmoothFilter = LPF(2.0f, 0.6f);
 	int iRecentStateRotation = 0;
 
 	private:
