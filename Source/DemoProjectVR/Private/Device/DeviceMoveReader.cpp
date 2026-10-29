@@ -46,8 +46,6 @@ void ADeviceMoveReader::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	DisconnectDevice();
 }
 
-
-
 // Called when the game starts or when spawned
 void ADeviceMoveReader::BeginPlay()
 {
@@ -66,8 +64,25 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 		bool canReConnect = ReConnectTimer <= 0.0f;
 		if (canReConnect)
 		{
-			ConnectDevice();
-			ReConnectTimer = ReConnectInterval;
+			bool canReConnect = ConnectDevice();
+
+			// 再接続完了したら
+			if (canReConnect)
+			{
+				ReConnectTimer = ReConnectInterval_TryCount;
+				ReConnectTryCount = TRY_COUNT;
+			}
+			// 再接続に失敗したら
+			else
+			{
+				// 接続試行回数が20回までは高速で再接続チェックを行う
+				ReConnectTimer = ReConnectInterval_TryCount;
+				if (ReConnectTryCount <= 0)
+				{
+					ReConnectTimer = ReConnectInterval;
+				}
+				ReConnectTryCount--;
+			}
 		}
 		else
 		{
@@ -156,11 +171,11 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
-	DEBUG_PRINT("%s | SerialController created.", *GetName());
+	// DEBUG_PRINT("%s | SerialController created.", *GetName());
 
 	SerialController->Initialize(TargetDeviceID, 0x01, 0x01);
 
-	DEBUG_PRINT("%s | SerialController initialized.", *GetName());
+	// DEBUG_PRINT("%s | SerialController initialized.", *GetName());
 
 	WindowsSerial* serial = new WindowsSerial();
 
@@ -184,7 +199,15 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
-	DEBUG_PRINT("%s | Connected to Move device on COM%d", *GetName(), ComPort);
+	DEBUG_PRINT("%s | Connected to Move device on COM%d / Device number -> %s", *GetName(), ComPort, ENUM_STR(DeviceNumber));
+
+	// 接続時に溜まっているデータは削除する
+	const int receivedData = serial->available();
+	if (receivedData >= 1)
+	{
+		serial->clear();
+		DEBUG_PRINT("%s | Received data cleared");
+	}
 
 	bDeviceConnected = true;
 	PollingTimer = 0.0f;

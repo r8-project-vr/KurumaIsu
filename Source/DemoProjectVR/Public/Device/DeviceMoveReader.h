@@ -152,6 +152,9 @@ private:
 	float PollingInterval = 0.05f;
 	float ReConnectInterval = 5.0f;
 	float ReConnectTimer = 0.0f;
+	const int TRY_COUNT = 20;
+	int ReConnectTryCount = 0;
+	float ReConnectInterval_TryCount = 0.1f;
 	bool bWaitingForResponse = false;
 	EDeviceRequest CurrentRequest = EDeviceRequest::None;
 	float CurrentRPS = 0.0f;
