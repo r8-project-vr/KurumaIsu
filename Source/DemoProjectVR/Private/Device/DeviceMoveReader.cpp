@@ -64,8 +64,25 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 		bool canReConnect = ReConnectTimer <= 0.0f;
 		if (canReConnect)
 		{
-			ConnectDevice();
-			ReConnectTimer = ReConnectInterval;
+			bool canReConnect = ConnectDevice();
+
+			// 再接続完了したら
+			if (canReConnect)
+			{
+				ReConnectTimer = ReConnectInterval_TryCount;
+				ReConnectTryCount = TRY_COUNT;
+			}
+			// 再接続に失敗したら
+			else
+			{
+				// 接続試行回数が20回までは高速で再接続チェックを行う
+				ReConnectTimer = ReConnectInterval_TryCount;
+				if (ReConnectTryCount <= 0)
+				{
+					ReConnectTimer = ReConnectInterval;
+				}
+				ReConnectTryCount--;
+			}
 		}
 		else
 		{
