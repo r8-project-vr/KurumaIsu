@@ -64,10 +64,10 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 		bool canReConnect = ReConnectTimer <= 0.0f;
 		if (canReConnect)
 		{
-			bool canReConnect = ConnectDevice();
+			bool reConnectResult = ConnectDevice();
 
 			// 再接続完了したら
-			if (canReConnect)
+			if (reConnectResult)
 			{
 				ReConnectTimer = ReConnectInterval_TryCount;
 				ReConnectTryCount = TRY_COUNT;
@@ -206,7 +206,7 @@ bool ADeviceMoveReader::ConnectDevice()
 	if (receivedData >= 1)
 	{
 		serial->clear();
-		DEBUG_PRINT("%s | Received data cleared");
+		DEBUG_PRINT("%s | Received data cleared", *GetName());
 	}
 
 	bDeviceConnected = true;
