@@ -46,8 +46,6 @@ void ADeviceMoveReader::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	DisconnectDevice();
 }
 
-
-
 // Called when the game starts or when spawned
 void ADeviceMoveReader::BeginPlay()
 {
@@ -156,11 +154,11 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
-	DEBUG_PRINT("%s | SerialController created.", *GetName());
+	// DEBUG_PRINT("%s | SerialController created.", *GetName());
 
 	SerialController->Initialize(TargetDeviceID, 0x01, 0x01);
 
-	DEBUG_PRINT("%s | SerialController initialized.", *GetName());
+	// DEBUG_PRINT("%s | SerialController initialized.", *GetName());
 
 	WindowsSerial* serial = new WindowsSerial();
 
@@ -184,7 +182,15 @@ bool ADeviceMoveReader::ConnectDevice()
 		return false;
 	}
 
-	DEBUG_PRINT("%s | Connected to Move device on COM%d", *GetName(), ComPort);
+	DEBUG_PRINT("%s | Connected to Move device on COM%d / Device number -> %s", *GetName(), ComPort, ENUM_STR(DeviceNumber));
+
+	// 接続時に溜まっているデータは削除する
+	const int receivedData = serial->available();
+	if (receivedData >= 1)
+	{
+		serial->clear();
+		DEBUG_PRINT("%s | Received data cleared");
+	}
 
 	bDeviceConnected = true;
 	PollingTimer = 0.0f;
