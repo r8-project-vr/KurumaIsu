@@ -23,6 +23,9 @@ public:
 	FString MakeString();
 
 	UFUNCTION(BlueprintCallable)
+	FString MakeErrorString();
+
+	UFUNCTION(BlueprintCallable)
 	void DeleteMessage();
 
 	UFUNCTION(BlueprintCallable)
@@ -73,7 +76,7 @@ private:
 		TEXT("デバイス番号を選択してください\nスタッフが入力します\n少々お待ちください\nStaff now inputting. PLEASE WAIT..."),
 		TEXT("前に回してください\nTurn the wheel FORWARD"),
 		TEXT("後ろに回してください\nTurn the wheel BACK"),
-		TEXT("デバイスを再接続してください\nスタッフが操作します\n少々お待ちください\nStaff now Operating. PLEASE WAIT...")
+		TEXT("デバイス接続不良\nスタッフが操作します\n少々お待ちください\nPLEASE WAIT...")
 	};
 
 	// プロセスのリスタート番号（配列のメッセージ参照用）

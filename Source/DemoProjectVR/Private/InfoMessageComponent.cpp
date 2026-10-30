@@ -40,6 +40,13 @@ FString UInfoMessageComponent::MakeString()
 	return ShowMessage;
 }
 
+FString UInfoMessageComponent::MakeErrorString()
+{
+	FString output = FString::Printf(TEXT("左:%.2lf / 右:%.2lf\n少々お待ちください\nPLEASE WAIT..."), forwardInputSum, backInputSum);
+
+	return output;
+}
+
 void UInfoMessageComponent::UpdateMessage()
 {
 	ShowMessage = MasterMessage[MasterSequence];

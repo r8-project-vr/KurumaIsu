@@ -104,7 +104,10 @@ void AISlideDoor::Action()
 {
 	if(!isDirectAction)
 	{
-		StartMovement(true);
+		if (!isOpen)
+		{
+			StartMovement(true);
+		}
 	}
 }
 
