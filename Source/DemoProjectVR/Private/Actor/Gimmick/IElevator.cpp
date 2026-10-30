@@ -200,8 +200,16 @@ void AIElevator::Tick(float DeltaTime)
 				}
 				else
 				{
-					isAction = true;
-					actionRunningTime = 0.0f;
+					if (isCloseDoor)
+					{
+						isCloseDoor = false;
+						actionRunningTime = 0.0f;
+					}
+					else
+					{
+						isAction = true;
+						actionRunningTime = 0.0f;
+					}
 				}
 			}
 			else 
@@ -305,6 +313,32 @@ void AIElevator::StartDoorAction()
 	beforeDoor2.Z = door.Z;
 	isDoorAction = true;
 	actionRunningTime = 0.0f;
+}
+
+void AIElevator::CloseDoorAction()
+{
+	if (isDoorAction || isAction)
+	{
+		return;
+	}
+
+	if (!isOpen && ElevatorDoorSound)
+	{
+		const FVector DoorLocation = (door1->GetComponentLocation() + door2->GetComponentLocation()) * 0.5f;
+		UGameplayStatics::SpawnSoundAttached(ElevatorDoorSound, RootComponent,
+			NAME_None, DoorLocation, EAttachLocation::KeepWorldPosition,
+			true, 1.0f, 1.0f, FMath::Max(0.0f, DoorSoundStartTime), ElevatorSoundAttenuation);
+	}
+
+	FVector door = door1->GetComponentLocation();
+	doorTargetLocation = beforeDoor1;
+	doorTargetLocation.Z = door.Z;
+	doorTargetLocation.X += doorMovePos;
+	beforeDoor1.Z = door.Z;
+	beforeDoor2.Z = door.Z;
+	isDoorAction = true;
+	actionRunningTime = 0.0f;
+	isCloseDoor = true;
 }
 
 void AIElevator::UpdateEngineSound()

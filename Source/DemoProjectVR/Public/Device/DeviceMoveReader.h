@@ -39,34 +39,65 @@ enum class EDeviceNumber : uint8
 struct LPF
 {
 public:
+	const float FrameRate;
 	const float Cutoff;
+	const float QFactor;
 	float Current;
+	float TimeCharge;
+
+	float a1, a2, b0, b1, b2;
+
+	float za1, za2, zb1, zb2;
 
 public:
-	LPF(float Cutoff)
-		: Cutoff(Cutoff)
+	LPF(float FrameRate, float Cutoff, float QFactor)
+		: FrameRate(FrameRate)
+		, Cutoff(Cutoff)
+		, QFactor(QFactor)
 		, Current(0.0f)
+		, TimeCharge(0.0f)
 	{
+		float w = Cutoff / FrameRate;
+		float w2 = w * w;
+		float wPerQ = w / QFactor;
+		float f = 1 + wPerQ + w2;
+		a1 = (w2 - 1) * 2 / f;
+		a2 = (1 - wPerQ + w2) / f;
+		b0 = w2;
+		b1 = w2 * 2;
+		b2 = w2;
 	}
 
 public:
 	void Update(float New, float DeltaTime)
 	{
-		Current += (New - Current) * exp(-DeltaTime * Cutoff);
+		TimeCharge += DeltaTime;
+		while (TimeCharge > 0.0f)
+		{
+			TimeCharge -= 1.0f / FrameRate;
+			float fir = New * b0 + zb1 * b1 + zb2 * b2;
+			float iir = -za1 * a1 - za2 * a2;
+			Current = fir + iir;
+			za2 = za1;
+			za1 = Current;
+			zb2 = zb1;
+			zb1 = New;
+		}
 	}
 
 	float GetValue()
 	{
 		return Current;
 	}
+
 };
 
 UCLASS()
 class DEMOPROJECTVR_API ADeviceMoveReader : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	ADeviceMoveReader();
 
@@ -102,7 +133,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial")
 	bool bConnectOnBeginPlay = true;
-	
+
 
 	/** Automatically finds a connected Seeed XIAO (USB VID 2886), so COM numbers may differ between PCs. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial")
@@ -131,6 +162,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|SerialNum")
 	bool bInputInversion = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|SerialNum")
+	float fMoveSpeed = 100.0f;
+
 	UPROPERTY()
 	UASerialLibControllerWin* SerialController = nullptr;
 protected:
@@ -150,7 +184,7 @@ private:
 
 	float PollingTimer = 0.0f;
 	float PollingInterval = 0.05f;
-	float ReConnectInterval = 5.0f;
+	float ReConnectInterval = 2.0f;
 	float ReConnectTimer = 0.0f;
 	const int TRY_COUNT = 20;
 	int ReConnectTryCount = 0;
@@ -161,7 +195,7 @@ private:
 	AMoveInput* MoveInput = nullptr;
 
 	// デバイスのシリアル番号：[3][4][5][1][2]
-	TArray<FString> SerialNumberTable = { "16bf3a9", "5c03106", "2c214f43", "25be1a67", "2c434751"};
+	TArray<FString> SerialNumberTable = { "16bf3a9", "5c03106", "2c214f43", "25be1a67", "2c434751" };
 
 	// デバイスの値
 	// 左車輪 : A -> B 
@@ -170,10 +204,11 @@ private:
 	// 読み取り[白] : true
 	bool bDeviceA = false, bDeviceB = false;
 	float fDeviceCurrentAngle = 0.0f;
-	const float fDeviceCorrectionRate = 10.0f;
+	float fDeviceSmoothedAngle = 0.0f;
+	LPF InputSmoothFilter = LPF(240.0f, 2.0f, 0.6f);
 	int iRecentStateRotation = 0;
 
-	private:
-		// 黒色の領域の割合（０～１）
-		const float fMarkRatio = 0.5f;
+private:
+	// 黒色の領域の割合（０～１）
+	const float fMarkRatio = 0.5f;
 };

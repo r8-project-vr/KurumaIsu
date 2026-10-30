@@ -90,13 +90,17 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 		}
 	}
 
-	float fCorrectedAngularDelta = -fDeviceCurrentAngle * (1.0f - exp(-DeltaTime * fDeviceCorrectionRate));
-	fDeviceCurrentAngle += fCorrectedAngularDelta;
+	InputSmoothFilter.Update(fDeviceCurrentAngle, DeltaTime);
+	float fFilterValue = InputSmoothFilter.GetValue();
+	float fCorrectedAngularDelta = fFilterValue - fDeviceSmoothedAngle;
+	fDeviceSmoothedAngle = fFilterValue;
+	//DEBUG_PRINT("%s || Target: %lf, Filter: %lf, Delta: %lf", *GetName(), fDeviceCurrentAngle, fFilterValue, fCorrectedAngularDelta);
+
 	if (bInputInversion)
 	{
 		fCorrectedAngularDelta *= -1;
 	}
-		MoveInput->SetValue(fCorrectedAngularDelta * 300);
+		MoveInput->SetValue(fCorrectedAngularDelta * fMoveSpeed);
 
 	PollingTimer += DeltaTime;
 
@@ -106,15 +110,15 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 	// まだ応答待ちなら読み取り処理
 	if (bWaitingForResponse)
 	{
-		const float PollingTimeout = 5.0f;
-		if (PollingTimer >= PollingTimeout)
-		{
-			//DEBUG_PRINT("Polling Timeout");
+		//const float PollingTimeout = 5.0f;
+		//if (PollingTimer >= PollingTimeout)
+		//{
+		//	//DEBUG_PRINT("Polling Timeout");
 
-			DisconnectDevice();
-			PollingTimer = 0.0f;
-			return;
-		}
+		//	DisconnectDevice();
+		//	PollingTimer = 0.0f;
+		//	return;
+		//}
 
 		//DEBUG_PRINT("Try Read Data");
 		ReadDataProcess();
@@ -291,7 +295,7 @@ void ADeviceMoveReader::ReadDataProcess()
 	{
 		return;
 	}
-	DEBUG_PRINT("%s | %d", *GetName(), resp.data[0]);
+	DEBUG_PRINT("%s ||| %d", *GetName(), resp.data[0]);
 
 	bWaitingForResponse = false;
 
@@ -314,7 +318,7 @@ void ADeviceMoveReader::ReadDataProcess()
 		bDeviceNewA = false;
 		bDeviceNewB = false;
 		break;
-	case 1:
+	case 1:        
 		bDeviceNewA = true;
 		bDeviceNewB = false;
 		break;
