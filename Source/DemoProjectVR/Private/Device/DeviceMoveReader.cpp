@@ -95,15 +95,15 @@ void ADeviceMoveReader::Tick(float DeltaTime)
 	// まだ応答待ちなら読み取り処理
 	if (bWaitingForResponse)
 	{
-		const float PollingTimeout = 5.0f;
-		if (PollingTimer >= PollingTimeout)
-		{
-			//DEBUG_PRINT("Polling Timeout");
+		//const float PollingTimeout = 5.0f;
+		//if (PollingTimer >= PollingTimeout)
+		//{
+		//	//DEBUG_PRINT("Polling Timeout");
 
-			DisconnectDevice();
-			PollingTimer = 0.0f;
-			return;
-		}
+		//	DisconnectDevice();
+		//	PollingTimer = 0.0f;
+		//	return;
+		//}
 
 		//DEBUG_PRINT("Try Read Data");
 		ReadDataProcess();

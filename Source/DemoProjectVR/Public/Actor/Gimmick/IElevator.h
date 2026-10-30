@@ -36,6 +36,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void StartDoorAction();
 
+	UFUNCTION(BlueprintCallable)
+	void CloseDoorAction();
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	UCurveFloat* moveCurve;
 	
@@ -92,6 +95,7 @@ private:
 	bool isOpen = false;
 	bool isDoorOpenOnly = false;
 	bool isCorrectionMove = false;
+	bool isCloseDoor = false;
 	float actionRunningTime = 0.0f;
 	float targetLocationZ = 0.0f;
 	float beforeLocationZ = 0.0f;

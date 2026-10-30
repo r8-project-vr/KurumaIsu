@@ -29,7 +29,7 @@ void UTaskComponent::BeginPlay()
 	stringChap2.taskString.Add(TEXT("スペードの鍵を手に入れよう"));
 	stringChap2.taskString.Add(TEXT("ハートの鍵を手に入れよう"));
 	stringChap2.taskString.Add(TEXT("クローバーの鍵を手に入れよう"));
-	stringChap2.taskString.Add(TEXT("思い出の写真を手に入れよう"));
+	stringChap2.taskString.Add(TEXT("思い出の写真を探し出そう"));
 	stringChap2.taskString.Add(TEXT("エレベーターに急げ！"));
 
 	stringChap3.taskString.Add(TEXT("下の階に戻ろう"));
