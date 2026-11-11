@@ -23,16 +23,79 @@ void ADeviceIMUReader::BeginPlay()
 void ADeviceIMUReader::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (bConnectOnBeginPlay && !IsDeviceConnected())
+	if (!IsDeviceConnected())
 	{
 		ReconnectElapsed += DeltaTime;
+
 		if (ReconnectElapsed >= ReconnectInterval)
 		{
 			ReconnectElapsed = 0.0f;
 			ConnectDevice();
 		}
 	}
+
+	if (IsDeviceConnected())
+	{
+		ConnectionElapsed += DeltaTime;
+	}
+
 	ReadAvailableSerialData();
+
+	// Apply the latest IMU sample at most once per game frame.
+	if (IsDeviceConnected() && bHasDeviceQuaternion)
+	{
+		if (bCalibrationPending)
+		{
+			if (ConnectionElapsed >= CalibrationDelay)
+			{
+				CalibrateOrientation();
+			}
+		}
+		else if (bIsCalibrated)
+		{
+			FQuat CalibratedQuaternion = CalibrationOffset * RawDeviceQuaternion;
+			CalibratedQuaternion.Normalize();
+
+			if (!bHasPreviousQuaternion)
+			{
+				PreviousRawQuaternion = CalibratedQuaternion;
+				bHasPreviousQuaternion = true;
+			}
+			else
+			{
+				FQuat DeltaRotation = CalibratedQuaternion * PreviousRawQuaternion.Inverse();
+				DeltaRotation.Normalize();
+
+				// q and -q represent the same orientation. Use the shortest rotation.
+				if (DeltaRotation.W < 0.0)
+				{
+					DeltaRotation = DeltaRotation * -1.0;
+				}
+
+				const double AngleDegrees = FMath::RadiansToDegrees(
+					2.0 * FMath::Acos(FMath::Clamp(static_cast<double>(DeltaRotation.W), 0.0, 1.0)));
+
+				if (AngleDegrees >= RotationThreshold)
+				{
+					GameOrientationQuaternion = DeltaRotation * GameOrientationQuaternion;
+					GameOrientationQuaternion.Normalize();
+				}
+
+				// Do not accumulate changes that were below the threshold.
+				PreviousRawQuaternion = CalibratedQuaternion;
+
+				if (bLogReceivedLines)
+				{
+					UE_LOG(LogDeviceIMUReader, Log, TEXT("IMU frame delta: %.5f deg / threshold: %.5f deg"),
+						AngleDegrees, RotationThreshold);
+				}
+			}
+
+			DeviceOrientationQuaternion = GameOrientationQuaternion;
+			DeviceOrientation = GameOrientationQuaternion.Rotator().GetNormalized();
+		}
+	}
+
 	UpdateFilteredDebugValues(DeltaTime);
 	//DrawDebugStatus();
 }
@@ -74,6 +137,19 @@ bool ADeviceIMUReader::ConnectDevice()
 	ReceiveBuffer.Reset();
 	bHasDeviceOrientation = false;
 	bHasDeviceQuaternion = false;
+	bIsCalibrated = false;
+	CalibrationOffset = FQuat::Identity;
+	RawDeviceQuaternion = FQuat::Identity;
+	PreviousRawQuaternion = FQuat::Identity;
+	GameOrientationQuaternion = FQuat::Identity;
+	bHasPreviousQuaternion = false;
+
+	ConnectionElapsed = 0.0f;
+
+	bCalibrationPending = true;
+
+
+
 	UE_LOG(LogDeviceIMUReader, Display, TEXT("Connected to IMU device on COM%d at %d baud."), ComPort, BaudRate);
 	return true;
 #else
@@ -159,6 +235,34 @@ bool ADeviceIMUReader::IsDeviceConnected() const
 #endif
 }
 
+
+
+
+void ADeviceIMUReader::CalibrateOrientation()
+{
+	if (!bHasDeviceQuaternion) { return; }
+
+	CalibrationOffset = RawDeviceQuaternion.Inverse();
+	bIsCalibrated = true;
+
+	PreviousRawQuaternion = FQuat::Identity;
+	bHasPreviousQuaternion = false;
+
+	GameOrientationQuaternion = FQuat::Identity;
+
+	DeviceOrientationQuaternion = FQuat::Identity;
+	DeviceOrientation = FRotator::ZeroRotator;
+
+
+	bCalibrationPending = false;
+
+	UE_LOG(LogDeviceIMUReader, Display,
+		TEXT("IMU orientation calibrated."));
+}
+
+
+
+
 void ADeviceIMUReader::ReadAvailableSerialData()
 {
 #if PLATFORM_WINDOWS
@@ -212,9 +316,15 @@ bool ADeviceIMUReader::ParseIMULine(const FString& Line)
 			return false;
 		}
 
+
+
+
+
+
 		ParsedOrientation.Normalize();
-		DeviceOrientationQuaternion = ParsedOrientation;
-		DeviceOrientation = ParsedOrientation.Rotator().GetNormalized();
+
+		// Parsing only: the game orientation is updated once per Tick.
+		RawDeviceQuaternion = ParsedOrientation;
 		Gyroscope = FVector(Values[4], Values[5], Values[6]);
 		bHasDeviceQuaternion = true;
 		bHasDeviceOrientation = true;
@@ -241,12 +351,12 @@ bool ADeviceIMUReader::ParseIMULine(const FString& Line)
 void ADeviceIMUReader::UpdateFilteredDebugValues(float DeltaTime)
 {
 	auto ApplyAxisDeadZone = [](const FVector& Value, float DeadZone)
-	{
-		return FVector(
-			FMath::Abs(Value.X) >= DeadZone ? Value.X : 0.0,
-			FMath::Abs(Value.Y) >= DeadZone ? Value.Y : 0.0,
-			FMath::Abs(Value.Z) >= DeadZone ? Value.Z : 0.0);
-	};
+		{
+			return FVector(
+				FMath::Abs(Value.X) >= DeadZone ? Value.X : 0.0,
+				FMath::Abs(Value.Y) >= DeadZone ? Value.Y : 0.0,
+				FMath::Abs(Value.Z) >= DeadZone ? Value.Z : 0.0);
+		};
 
 	const FVector TargetGyroscope = ApplyAxisDeadZone(Gyroscope, GyroscopeDeadZone);
 	const FVector TargetAcceleration = ApplyAxisDeadZone(Acceleration, AccelerationDeadZone);

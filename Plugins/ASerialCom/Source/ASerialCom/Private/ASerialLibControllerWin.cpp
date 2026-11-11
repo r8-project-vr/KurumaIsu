@@ -65,8 +65,9 @@ ConnectResult UASerialLibControllerWin::ConnectDevice(int COM_num)
         }
     }
 
-    if (clock() - read_time >= 50 || st == -1 || data_buf.data[0] != GetID() ||
+    if (clock() - read_time >= 50 || st == -1  || data_buf.data[0] != GetID() ||
         (data_buf.data[1] < m_device_ver_min && data_buf.data[1] > m_device_ver_max)) {
+		DEBUG_PRINT("### %d --- %d /// %d", data_buf.data[0], GetID(), st);
         m_inteface->ClosePort();
         return ConnectResult::Fail;
     }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -24,6 +24,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Device|IMU")
 	bool IsDeviceConnected() const;
 
+	// キャリブレーション
+	UFUNCTION(BlueprintCallable, Category = "Device|IMU")
+	void CalibrateOrientation();
+
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
 	int32 ComPort = 3;
 	/** Automatically finds a connected Seeed XIAO (USB VID 2886), so COM numbers may differ between PCs. */
@@ -31,7 +36,7 @@ public:
 	bool bAutoDetectComPort = true;
 	/** Retry delay when the device is connected after the game has already started. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "0.5"))
-	float ReconnectInterval = 2.0f;
+	float ReconnectInterval = 0.5f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1200"))
 	int32 BaudRate = 115200;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial")
@@ -96,4 +101,39 @@ private:
 	WindowsSerial* SerialPort = nullptr;
 	FString ReceiveBuffer;
 	float ReconnectElapsed = 0.0f;
+
+	// キャリブレーション
+	FQuat CalibrationOffset = FQuat::Identity;
+	FQuat RawDeviceQuaternion = FQuat::Identity;
+
+	bool bIsCalibrated = false;
+
+
+	FQuat PreviousRawQuaternion = FQuat::Identity;
+	FQuat GameOrientationQuaternion = FQuat::Identity;
+
+	bool bHasPreviousQuaternion = false;
+
+	// 回転差分の閾値（度）
+	UPROPERTY(EditAnywhere, Category = "Device|IMU|Filter")
+	float RotationThreshold = 0.3f;
+
+
+	UPROPERTY(EditAnywhere, Category = "Device|IMU|Filter")
+	float GyroscopeStationaryThreshold = 0.5f;
+
+	UPROPERTY(EditAnywhere, Category = "Device|IMU|Filter")
+	float StationaryRequiredTime = 0.5f;
+
+	UPROPERTY(EditAnywhere, Category = "Device|IMU|Calibration")
+	float CalibrationDelay = 2.0f;
+
+	float StationaryElapsed = 0.0f;
+	float ConnectionElapsed = 0.0f;
+
+	bool bIsStationary = false;
+	bool bCalibrationPending = false;
+
+	double LastIMUSampleTime = -1.0;
+
 };
