@@ -1,0 +1,106 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "DebugHelper.h"
+#include "../../../../Plugins/ASerialCom/Source/ASerialCom/Public/ASerialLibControllerWin.h"
+#include "DeviceMoveReader.h"
+
+#if PLATFORM_WINDOWS
+#include "WindowsSerial/WindowsSerial.h"
+#include "Windows/AllowWindowsPlatformTypes.h"
+#include <setupapi.h>
+#include "Windows/HideWindowsPlatformTypes.h"
+#endif
+#include "DeviceNuiReader.generated.h"
+
+UCLASS()
+class DEMOPROJECTVR_API ADeviceNuiReader : public AActor
+{
+	GENERATED_BODY()
+	
+public:	
+	// Sets default values for this actor's properties
+	ADeviceNuiReader();
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void Tick(float DeltaTime) override;
+	//virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Device|IMU")
+	bool ConnectDevice();
+	UFUNCTION(BlueprintCallable, Category = "Device|IMU")
+	void DisconnectDevice();
+	UFUNCTION(BlueprintPure, Category = "Device|IMU")
+	bool IsDeviceConnected() const;
+
+	void SetMoveInput(AMoveInput* moveinput);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
+	int TargetDeviceID = 0x02;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
+	int DeviceVersion = 0x01;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1"))
+	int32 ComPort = 11;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "1200"))
+	int32 BaudRate = 115200;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial")
+	bool bConnectOnBeginPlay = true;
+
+
+	/** Automatically finds a connected Seeed XIAO (USB VID 2886), so COM numbers may differ between PCs. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial")
+	bool bAutoDetectComPort = true;
+
+	/** Retry delay when the device is connected after the game has already started. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Serial", meta = (ClampMin = "0.5"))
+	float ReconnectInterval = 2.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug")
+	bool bShowOnScreenDebug = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Device|Debug")
+	bool bLogReceivedLines = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Device|IMU")
+	FString LastReceivedLine;
+
+	// ぬいぐるみのデバイスのシリアル番号（確認方法：デバイスマネージャーからデバイスID確認）
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Device|SerialNum")
+	FString DeviceNumber = "eb2edc2";
+
+	UPROPERTY()
+	UASerialLibControllerWin* SerialController = nullptr;
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+private:
+	void ReadDataProcess();
+	bool RequestUpdate();
+	void RequestRPS();
+	int32 FindXiaoComPort() const;
+
+	WindowsSerial* SerialInterface = nullptr;
+	FString ReceiveBuffer;
+	bool bDeviceConnected = false;
+	u_int Command = 0x22;
+
+	float PollingTimer = 0.0f;
+	float PollingInterval = 0.05f;
+	float ReConnectInterval = 2.0f;
+	float ReConnectTimer = 0.0f;
+	const int TRY_COUNT = 20;
+	int ReConnectTryCount = 0;
+	float ReConnectInterval_TryCount = 0.1f;
+	bool bWaitingForResponse = false;
+	EDeviceRequest CurrentRequest = EDeviceRequest::None;
+	float CurrentRPS = 0.0f;
+	AMoveInput* MoveInput = nullptr;
+};

@@ -1,0 +1,448 @@
+﻿// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Device/DeviceNuiReader.h"
+
+// Sets default values
+ADeviceNuiReader::ADeviceNuiReader()
+{
+ 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+}
+
+
+void ADeviceNuiReader::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	DisconnectDevice();
+}
+
+// Called when the game starts or when spawned
+void ADeviceNuiReader::BeginPlay()
+{
+	Super::BeginPlay();
+	if (bConnectOnBeginPlay) { ConnectDevice(); }
+}
+
+// Called every frame
+void ADeviceNuiReader::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	// 接続が無かったら再接続処理
+	if (!bDeviceConnected)
+	{
+		bool canReConnect = ReConnectTimer <= 0.0f;
+		if (canReConnect)
+		{
+			bool reConnectResult = ConnectDevice();
+
+			// 再接続完了したら
+			if (reConnectResult)
+			{
+				ReConnectTimer = ReConnectInterval_TryCount;
+				ReConnectTryCount = TRY_COUNT;
+			}
+			// 再接続に失敗したら
+			else
+			{
+				// 接続試行回数が20回までは高速で再接続チェックを行う
+				ReConnectTimer = ReConnectInterval_TryCount;
+				if (ReConnectTryCount <= 0)
+				{
+					ReConnectTimer = ReConnectInterval;
+				}
+				ReConnectTryCount--;
+			}
+		}
+		else
+		{
+			ReConnectTimer -= DeltaTime;
+		}
+	}
+
+	PollingTimer += DeltaTime;
+
+	//DEBUG_PRINT("=====================================");
+	//DEBUG_PRINT("PollingTimer: % lf", PollingTimer);
+
+	// まだ応答待ちなら読み取り処理
+	if (bWaitingForResponse)
+	{
+		//const float PollingTimeout = 5.0f;
+		//if (PollingTimer >= PollingTimeout)
+		//{
+		//	//DEBUG_PRINT("Polling Timeout");
+
+		//	DisconnectDevice();
+		//	PollingTimer = 0.0f;
+		//	return;
+		//}
+
+		//DEBUG_PRINT("Try Read Data");
+		ReadDataProcess();
+		return;
+	}
+
+	// デバイス側の更新レートに合わせて変更する（現在データは送られてきた全てのデータに応答する）
+	/*
+	// ポーリング周期前なら何もしない
+	if (PollingTimer < PollingInterval)
+	{
+		//DEBUG_PRINT("Waiting Polling");
+		return;
+	}
+	*/
+
+	PollingTimer = 0.0f;
+
+	//DEBUG_PRINT("Request Updated");
+
+	//// まず更新フラグを要求
+	RequestUpdate();
+	//RequestRPS();
+}
+
+bool ADeviceNuiReader::ConnectDevice()
+{
+#if PLATFORM_WINDOWS
+
+	// 既存接続がある場合だけ切断
+	if (SerialController != nullptr)
+	{
+		DisconnectDevice();
+	}
+
+	// COMポート自動検索
+	if (bAutoDetectComPort)
+	{
+		const int32 DetectedPort = FindXiaoComPort();
+		if (DetectedPort <= 0)
+		{
+			DEBUG_PRINT("Seeed XIAO USB serial device is not connected.");
+			return false;
+		}
+		ComPort = DetectedPort;
+	}
+
+	// コントローラー生成
+	SerialController = NewObject<UASerialLibControllerWin>(this);
+
+	if (SerialController == nullptr)
+	{
+		DEBUG_PRINT("Failed to create SerialController");
+		return false;
+	}
+
+	// DEBUG_PRINT("%s | SerialController created.", *GetName());
+
+	SerialController->Initialize(TargetDeviceID, 0x01, 0x01);
+
+	// DEBUG_PRINT("%s | SerialController initialized.", *GetName());
+
+	WindowsSerial* serial = new WindowsSerial();
+
+	if (serial == nullptr)
+	{
+		DEBUG_PRINT("Failed to create WindowsSerial");
+		return false;
+	}
+
+	SerialInterface = serial;
+
+	// コントローラーへ設定
+	SerialController->SetInterfacePt(serial);
+
+	// COMポートに接続
+	int result = SerialController->ConnectDevice(ComPort);
+
+	if (result == -1)
+	{
+		DEBUG_PRINT("Failed to connect Move device on COM%d", ComPort);
+		return false;
+	}
+
+	// 接続時に溜まっているデータは削除する
+	const int receivedData = serial->available();
+	if (receivedData >= 1)
+	{
+		serial->clear();
+		DEBUG_PRINT("%s | Received data cleared", *GetName());
+	}
+
+	bDeviceConnected = true;
+	PollingTimer = 0.0f;
+	ReConnectTimer = 0.0f;
+	bWaitingForResponse = false;
+	return true;
+#else
+	DEBUG_PRINT("DeviceMoveReader currently supports Windows only.");
+	return false;
+#endif
+}
+
+void ADeviceNuiReader::DisconnectDevice()
+{
+#if PLATFORM_WINDOWS
+	// Controller経由で切断
+	if (IsValid(SerialController))
+	{
+		SerialController->DisConnectDevice();
+	}
+
+	SerialController = nullptr;
+
+	// WindowsSerialを削除
+	if (SerialInterface != nullptr)
+	{
+		delete SerialInterface;
+		SerialInterface = nullptr;
+	}
+	bDeviceConnected = false;
+
+	DEBUG_PRINT("%s | Move device disconnected.", *GetName());
+#endif
+	ReceiveBuffer.Reset();
+}
+
+bool ADeviceNuiReader::IsDeviceConnected() const
+{
+#if PLATFORM_WINDOWS
+	if (SerialController == nullptr)
+	{
+		DEBUG_PRINT("SerialController Nullptr");
+		return false;
+	}
+
+	return SerialController->GetConnectionState();
+#else
+	return false;
+#endif
+}
+
+void ADeviceNuiReader::SetMoveInput(AMoveInput* moveinput)
+{
+	MoveInput = moveinput;
+}
+
+void ADeviceNuiReader::ReadDataProcess()
+{
+	if (SerialController == nullptr)
+	{
+		return;
+	}
+
+	ASerialDataStruct::ASerialData resp;
+
+	const int result = SerialController->ReadData(&resp);
+
+	if (result != 0)
+	{
+		return;
+	}
+	
+	int cnt = 0;
+
+	for (float res : resp.data)
+	{
+		DEBUG_PRINT("%s ||| %d : %lf ", *GetName(), cnt, res);
+		cnt++;
+	}
+
+	bWaitingForResponse = false;
+
+	if (resp.data_num != 1)
+	{
+		DEBUG_PRINT("RPS response is invalid -> data num : %d", resp.data_num);
+		return;
+	}
+
+	CurrentRequest = EDeviceRequest::None;
+
+	return;
+
+	// デバイスの仕様変更に伴い変更
+	// 更新フラグの応答
+	/*
+	if (CurrentRequest == EDeviceRequest::UpdateFlag)
+	{
+		if (resp.data_num < 1)
+		{
+			DEBUG_PRINT("UpdateFlag response is invalid");
+			CurrentRequest = EDeviceRequest::None;
+			return;
+		}
+
+		uint8 UpdateFlag = resp.data[0];
+
+		//DEBUG_PRINT("Update Flag = %d", UpdateFlag);
+
+		CurrentRequest = EDeviceRequest::None;
+
+		if (UpdateFlag == 1)
+		{
+			RequestRPS();
+		}
+
+		return;
+	}
+	*/
+
+	// デバイスの仕様変更に伴い変更
+	/*
+
+	// RPSの応答
+	if (CurrentRequest == EDeviceRequest::RPS)
+	{
+
+
+		// ビッグエンディアンでint32に変換
+		int32 rawRPS = (static_cast<int32>(resp.data[0]) << 24) | (static_cast<int32>(resp.data[1]) << 16) | (static_cast<int32>(resp.data[2]) << 8) | static_cast<int32>(resp.data[3]);
+
+
+		// 100倍されているので戻す
+		float RPS = static_cast<float>(rawRPS) / 100.0f;
+
+		// 正負の取得
+		SerialController->WriteData(0x23);
+		const int resultTemp = SerialController->ReadData(&resp);
+
+		if (resultTemp != 0)
+		{
+			DEBUG_PRINT("Fail to Read 0x23");
+			DisconnectDevice();
+			return;
+		}
+
+		bool isPositive = resp.data[0] == 0;
+		if (isPositive)
+		{
+			rawRPS *= -1;
+			RPS *= -1.0f;
+		}
+		if (bInputInversion)
+		{
+			rawRPS *= -1;
+			RPS *= -1.0f;
+		}
+
+
+		//DEBUG_PRINT("Raw RPS = %d", rawRPS);
+		//DEBUG_PRINT("RPS = %lf", RPS);
+
+		CurrentRPS = RPS;
+	}
+	*/
+}
+
+// デバイスの仕様変更に伴い変更
+bool ADeviceNuiReader::RequestUpdate()
+{
+	if (SerialController == nullptr)
+	{
+		// DEBUG_PRINT("RequestUpdate failed : SerialController is nullptr");
+		return false;
+	}
+
+	SerialController->WriteData(0x20);
+
+	ASerialDataStruct::ASerialData resp;
+
+	const int result = SerialController->ReadData(&resp);
+
+	DEBUG_PRINT("%s | Request Update Result => %d", *GetName(), result);
+
+	bWaitingForResponse = true;
+
+	if (result != 0)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+// デバイスの仕様変更に伴い利用停止
+void ADeviceNuiReader::RequestRPS()
+{
+	// 利用停止
+
+	if (SerialController == nullptr)
+	{
+		return;
+	}
+
+	SerialController->WriteData(0x22);
+
+	CurrentRequest = EDeviceRequest::RPS;
+
+	bWaitingForResponse = true;
+
+	//DEBUG_PRINT("Request RPS");
+}
+
+int32 ADeviceNuiReader::FindXiaoComPort() const
+{
+#if PLATFORM_WINDOWS
+	GUID PortClassGuids[8];
+	DWORD RequiredGuids = 0;
+	if (!SetupDiClassGuidsFromNameW(L"Ports", PortClassGuids, UE_ARRAY_COUNT(PortClassGuids), &RequiredGuids))
+	{
+		return INDEX_NONE;
+	}
+
+	for (DWORD GuidIndex = 0; GuidIndex < FMath::Min<DWORD>(RequiredGuids, UE_ARRAY_COUNT(PortClassGuids)); ++GuidIndex)
+	{
+		HDEVINFO DeviceInfoSet = SetupDiGetClassDevsW(&PortClassGuids[GuidIndex], nullptr, nullptr, DIGCF_PRESENT);
+		if (DeviceInfoSet == INVALID_HANDLE_VALUE) { continue; }
+
+		SP_DEVINFO_DATA DeviceInfo = {};
+		DeviceInfo.cbSize = sizeof(DeviceInfo);
+		for (DWORD DeviceIndex = 0; SetupDiEnumDeviceInfo(DeviceInfoSet, DeviceIndex, &DeviceInfo); ++DeviceIndex)
+		{
+			WCHAR InstanceIdBuffer[512] = {};
+
+			if (!SetupDiGetDeviceInstanceIdW(
+				DeviceInfoSet,
+				&DeviceInfo,
+				InstanceIdBuffer,
+				UE_ARRAY_COUNT(InstanceIdBuffer),
+				nullptr))
+			{
+				continue;
+			}
+
+			const FString InstanceId(InstanceIdBuffer);
+
+			// 指定した個体だけ通す
+			if (!InstanceId.Contains(DeviceNumber, ESearchCase::IgnoreCase))
+			{
+				continue;
+			}
+
+			HKEY DeviceKey = SetupDiOpenDevRegKey(DeviceInfoSet, &DeviceInfo, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_READ);
+			if (DeviceKey == INVALID_HANDLE_VALUE) { continue; }
+			wchar_t PortName[64] = {};
+			DWORD PortNameSize = sizeof(PortName);
+			const LONG QueryResult = RegQueryValueExW(DeviceKey, L"PortName", nullptr, nullptr,
+				reinterpret_cast<LPBYTE>(PortName), &PortNameSize);
+			RegCloseKey(DeviceKey);
+			if (QueryResult != ERROR_SUCCESS) { continue; }
+
+			const FString PortString(PortName);
+			if (PortString.StartsWith(TEXT("COM"), ESearchCase::IgnoreCase))
+			{
+				const int32 Result = FCString::Atoi(*PortString.Mid(3));
+				SetupDiDestroyDeviceInfoList(DeviceInfoSet);
+				return Result;
+			}
+		}
+		SetupDiDestroyDeviceInfoList(DeviceInfoSet);
+	}
+#endif
+	return INDEX_NONE;
+}
+
+
